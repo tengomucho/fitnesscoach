@@ -33,3 +33,19 @@ You can get help and see all commands with:
 ```bash
 fitness-coach --help
 ```
+
+## Login
+
+This app uses data that is fetched from Garmin Connect, using the excellent `garminconnect` package. In order to be able to get the data, you need to login once, by doing
+
+```bash
+fitness-coach login
+```
+
+# Run tests
+
+To run tests you can just run
+
+```bash
+pytest -sv tests
+```

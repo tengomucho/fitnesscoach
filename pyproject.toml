@@ -17,6 +17,7 @@ include = ["fitness_coach*"]
 
 [project.optional-dependencies]
 dev = [
+    "pytest>=9.0.2",
     "ipdb>=0.13.13",
     "ruff>=0.14.10",
 ]
