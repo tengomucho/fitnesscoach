@@ -1,5 +1,5 @@
 [project]
-name = "fitness-coach"
+name = "fitness_coach"
 version = "0.1.0"
 description = "Smart fitness coach powered by AI"
 readme = "README.md"
@@ -10,8 +10,12 @@ dependencies = [
     "rich>=14.2.0",
     "typer>=0.21.1",
 ]
+scripts = { fitness-coach = "fitness_coach.cli:app" }
 
-[dependency-groups]
+[tool.setuptools.packages.find]
+include = ["fitness_coach*"]
+
+[project.optional-dependencies]
 dev = [
     "ipdb>=0.13.13",
     "ruff>=0.14.10",

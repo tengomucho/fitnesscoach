@@ -1,16 +1,12 @@
-import typer
-import keyring
 import json
 import os
-import requests
 import datetime
-
+import keyring
+import requests
+import typer
 from garminconnect import Garmin, GarthHTTPError, GarthException, GarminConnectAuthenticationError, GarminConnectConnectionError
-
 from rich import print
 
-
-app = typer.Typer()
 SERVICE_NAME = "fitness-coach"
 CONFIG_DIR = os.path.expanduser(f"~/.{SERVICE_NAME}")
 CACHED_DATA = os.path.join(CONFIG_DIR, "cached_data.json")
@@ -136,8 +132,6 @@ def init_api(email: str | None = None, password: str | None = None) -> Garmin | 
             print("\nLogin cancelled by user")
             return None
 
-
-@app.command()
 def login() -> Garmin:
     username = config.get("username")
     if username is None:
@@ -148,24 +142,25 @@ def login() -> Garmin:
 
     garmin = init_api(username, password)
     if garmin is None:
-        typer.echo("❌ Login failed")
+        print("❌ Login failed")
         raise typer.Exit(code=1)
 
     config.set("username", username)
     keyring.set_password(SERVICE_NAME, username, password)
     return garmin
 
-
 def get_summary():
     data = None
     if os.path.exists(CACHED_DATA):
         with open(CACHED_DATA, "r") as f:
             cached_data = json.load(f)
-            timestamp = datetime.datetime.fromisoformat(cached_data.get("timestamp", None))
-            # check if timestamp is within the last hour
-            last_valid_timestamp = datetime.datetime.now() - datetime.timedelta(minutes=CACHE_EXPIRATION_MINUTES)
-            if timestamp is not None and timestamp > last_valid_timestamp:
-                data = cached_data
+            timestamp_str = cached_data.get("timestamp", None)
+            if timestamp_str:
+                timestamp = datetime.datetime.fromisoformat(timestamp_str)
+                # check if timestamp is within the last hour
+                last_valid_timestamp = datetime.datetime.now() - datetime.timedelta(minutes=CACHE_EXPIRATION_MINUTES)
+                if timestamp > last_valid_timestamp:
+                    data = cached_data
     if data is None:
         garmin = login()
         data = garmin.get_user_summary(cdate=datetime.date.today().isoformat())
@@ -174,91 +169,46 @@ def get_summary():
             json.dump(data, f)
     return data
 
-@app.command()
-def summary():
-    data = get_summary()
-    steps = data.get("totalSteps", 0)
-    daily_step_goal = data.get("dailyStepGoal", 0)
-    sleeping_seconds = data.get("sleepingSeconds", 0)
-    active_seconds = data.get("activeSeconds", 0)
-
-
-    print(f"Steps: {steps}")
-    print(f"Daily Step Goal: {daily_step_goal}")
-    print(f"Active Minutes: {active_seconds // 60}")
-    print(f"Sleeping Minutes: {sleeping_seconds // 60}")
-
-
 def get_steps() -> int:
-    """Get the steps from the summary.
-
-    Returns:
-        int: The steps
-    """
+    """Get the steps from the summary."""
     summary = get_summary()
     return summary.get("totalSteps", 0)
 
-
 def get_daily_step_goal() -> int:
-    """Get the daily step goal from the summary.
-
-    Returns:
-        int: The daily step goal
-    """
+    """Get the daily step goal from the summary."""
     summary = get_summary()
     return summary.get("dailyStepGoal", 0)
 
-
 def get_goal_progress() -> float:
-    """Get the goal progress from the summary.
-
-    Returns:
-        float: The goal progress
-    """
+    """Get the goal progress from the summary."""
     steps = get_steps()
     daily_step_goal = get_daily_step_goal()
+    if daily_step_goal == 0:
+        return 0.0
     return (steps / daily_step_goal) * 100
 
 def get_sleeping_minutes() -> int:
-    """Get the sleeping minutes from the summary.
-
-    Returns:
-        int: The sleeping minutes
-    """
+    """Get the sleeping minutes from the summary."""
     summary = get_summary()
     sleeping_seconds = summary.get("sleepingSeconds", 0)
     return sleeping_seconds // 60
 
 def get_active_minutes() -> int:
-    """Get the active minutes from the summary.
-
-    Returns:
-        int: The active minutes
-    """
+    """Get the active minutes from the summary."""
     summary = get_summary()
     active_seconds = summary.get("activeSeconds", 0)
     return active_seconds // 60
 
 def get_heart_rate() -> tuple[int, int]:
-    """Get the minimum and maximum heart rate from the summary.
-
-    Returns:
-        tuple[int, int]: The minimum and maximum heart rate
-    """
+    """Get the minimum and maximum heart rate from the summary."""
     summary = get_summary()
     min_heart_rate = summary.get("minHeartRate", 0)
     max_heart_rate = summary.get("maxHeartRate", 0)
     return min_heart_rate, max_heart_rate
 
 def get_body_battery_level() -> int:
-    """Get the body battery level from the summary.
-
-    Returns:
-        int: The most recent body battery level
-    """
+    """Get the body battery level from the summary."""
     summary = get_summary()
     most_recent_body_battery_level = summary.get("bodyBatteryMostRecentValue", 0)
     return most_recent_body_battery_level
 
-if __name__ == "__main__":
-    app()
