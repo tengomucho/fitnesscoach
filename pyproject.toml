@@ -1,0 +1,18 @@
+[project]
+name = "fitness-coach"
+version = "0.1.0"
+description = "Smart fitness coach powered by AI"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "garminconnect>=0.2.38",
+    "keyring>=25.7.0",
+    "rich>=14.2.0",
+    "typer>=0.21.1",
+]
+
+[dependency-groups]
+dev = [
+    "ipdb>=0.13.13",
+    "ruff>=0.14.10",
+]
