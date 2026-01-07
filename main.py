@@ -13,6 +13,8 @@ from rich import print
 app = typer.Typer()
 SERVICE_NAME = "fitness-coach"
 CONFIG_DIR = os.path.expanduser(f"~/.{SERVICE_NAME}")
+CACHED_DATA = os.path.join(CONFIG_DIR, "cached_data.json")
+CACHE_EXPIRATION_MINUTES = 60
 
 class Config:
     def __init__(self):
@@ -151,18 +153,34 @@ def login() -> Garmin:
 
     config.set("username", username)
     keyring.set_password(SERVICE_NAME, username, password)
-    print("Successfully logged in")
     return garmin
 
 
+def get_summary():
+    data = None
+    if os.path.exists(CACHED_DATA):
+        with open(CACHED_DATA, "r") as f:
+            cached_data = json.load(f)
+            timestamp = datetime.datetime.fromisoformat(cached_data.get("timestamp", None))
+            # check if timestamp is within the last hour
+            last_valid_timestamp = datetime.datetime.now() - datetime.timedelta(minutes=CACHE_EXPIRATION_MINUTES)
+            if timestamp is not None and timestamp > last_valid_timestamp:
+                data = cached_data
+    if data is None:
+        garmin = login()
+        data = garmin.get_user_summary(cdate=datetime.date.today().isoformat())
+        data["timestamp"] = datetime.datetime.now().isoformat()
+        with open(CACHED_DATA, "w") as f:
+            json.dump(data, f)
+    return data
+
 @app.command()
 def summary():
-    garmin = login()
-    summary = garmin.get_user_summary(cdate=datetime.date.today().isoformat())
-    steps = summary.get("totalSteps", 0)
-    daily_step_goal = summary.get("dailyStepGoal", 0)
-    sleeping_seconds = summary.get("sleepingSeconds", 0)
-    active_seconds = summary.get("activeSeconds", 0)
+    data = get_summary()
+    steps = data.get("totalSteps", 0)
+    daily_step_goal = data.get("dailyStepGoal", 0)
+    sleeping_seconds = data.get("sleepingSeconds", 0)
+    active_seconds = data.get("activeSeconds", 0)
 
 
     print(f"Steps: {steps}")
@@ -170,6 +188,77 @@ def summary():
     print(f"Active Minutes: {active_seconds // 60}")
     print(f"Sleeping Minutes: {sleeping_seconds // 60}")
 
+
+def get_steps() -> int:
+    """Get the steps from the summary.
+
+    Returns:
+        int: The steps
+    """
+    summary = get_summary()
+    return summary.get("totalSteps", 0)
+
+
+def get_daily_step_goal() -> int:
+    """Get the daily step goal from the summary.
+
+    Returns:
+        int: The daily step goal
+    """
+    summary = get_summary()
+    return summary.get("dailyStepGoal", 0)
+
+
+def get_goal_progress() -> float:
+    """Get the goal progress from the summary.
+
+    Returns:
+        float: The goal progress
+    """
+    steps = get_steps()
+    daily_step_goal = get_daily_step_goal()
+    return (steps / daily_step_goal) * 100
+
+def get_sleeping_minutes() -> int:
+    """Get the sleeping minutes from the summary.
+
+    Returns:
+        int: The sleeping minutes
+    """
+    summary = get_summary()
+    sleeping_seconds = summary.get("sleepingSeconds", 0)
+    return sleeping_seconds // 60
+
+def get_active_minutes() -> int:
+    """Get the active minutes from the summary.
+
+    Returns:
+        int: The active minutes
+    """
+    summary = get_summary()
+    active_seconds = summary.get("activeSeconds", 0)
+    return active_seconds // 60
+
+def get_heart_rate() -> tuple[int, int]:
+    """Get the minimum and maximum heart rate from the summary.
+
+    Returns:
+        tuple[int, int]: The minimum and maximum heart rate
+    """
+    summary = get_summary()
+    min_heart_rate = summary.get("minHeartRate", 0)
+    max_heart_rate = summary.get("maxHeartRate", 0)
+    return min_heart_rate, max_heart_rate
+
+def get_body_battery_level() -> int:
+    """Get the body battery level from the summary.
+
+    Returns:
+        int: The most recent body battery level
+    """
+    summary = get_summary()
+    most_recent_body_battery_level = summary.get("bodyBatteryMostRecentValue", 0)
+    return most_recent_body_battery_level
 
 if __name__ == "__main__":
     app()
