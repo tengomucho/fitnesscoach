@@ -1,11 +1,19 @@
+import datetime
 import json
 import os
-import datetime
+
 import keyring
 import requests
 import typer
-from garminconnect import Garmin, GarthHTTPError, GarthException, GarminConnectAuthenticationError, GarminConnectConnectionError
+from garminconnect import (
+    Garmin,
+    GarminConnectAuthenticationError,
+    GarminConnectConnectionError,
+    GarthException,
+    GarthHTTPError,
+)
 from rich import print
+
 
 SERVICE_NAME = "fitness-coach"
 CONFIG_DIR = os.path.expanduser(f"~/.{SERVICE_NAME}")

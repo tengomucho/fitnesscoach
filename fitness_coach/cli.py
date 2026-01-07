@@ -1,6 +1,8 @@
 import typer
 from rich import print
+
 from . import fitness_coach
+
 
 app = typer.Typer()
 
