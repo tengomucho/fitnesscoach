@@ -1,5 +1,5 @@
 [project]
-name = "fitness_coach"
+name = "fitnesscoach"
 version = "0.1.0"
 description = "Smart fitness coach powered by AI"
 readme = "README.md"
@@ -10,10 +10,10 @@ dependencies = [
     "rich>=14.2.0",
     "typer>=0.21.1",
 ]
-scripts = { fitness-coach = "fitness_coach.cli:app" }
+scripts = { fitnesscoach = "fitnesscoach.cli:app" }
 
 [tool.setuptools.packages.find]
-include = ["fitness_coach*"]
+include = ["fitnesscoach*"]
 
 [project.optional-dependencies]
 dev = [

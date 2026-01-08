@@ -1,6 +1,6 @@
 # Fitness Coach
 
-This is a project that shows how it is possible to get a simple fitness coach assistant. 
+This is a project that shows how it is possible to get a simple fitness coach assistant.
 
 ## Installation
 
@@ -23,7 +23,7 @@ All dependencies will be installed automatically.
 After installation, you can use the CLI tool. To get a daily fitness summary, run:
 
 ```bash
-fitness-coach summary
+fitnesscoach summary
 ```
 
 This command fetches your latest health and fitness data and outputs a concise summary.
@@ -31,7 +31,7 @@ This command fetches your latest health and fitness data and outputs a concise s
 You can get help and see all commands with:
 
 ```bash
-fitness-coach --help
+fitnesscoach --help
 ```
 
 ## Login
@@ -39,7 +39,7 @@ fitness-coach --help
 This app uses data that is fetched from Garmin Connect, using the excellent `garminconnect` package. In order to be able to get the data, you need to login once, by doing
 
 ```bash
-fitness-coach login
+fitnesscoach login
 ```
 
 # Run tests

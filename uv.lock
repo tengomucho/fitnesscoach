@@ -285,7 +285,7 @@ wheels = [
 ]
 
 [[package]]
-name = "fitness-coach"
+name = "fitnesscoach"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

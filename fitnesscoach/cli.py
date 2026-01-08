@@ -1,7 +1,7 @@
 import typer
 from rich import print
 
-from . import fitness_coach
+from . import provider
 
 
 app = typer.Typer()
@@ -9,13 +9,13 @@ app = typer.Typer()
 @app.command()
 def login():
     """Login to Garmin Connect."""
-    fitness_coach.login()
+    provider.login()
     print("✅ Successfully logged in")
 
 @app.command()
 def summary():
     """Show daily summary from Garmin Connect."""
-    data = fitness_coach.get_summary()
+    data = provider.get_summary()
     steps = data.get("totalSteps", 0)
     daily_step_goal = data.get("dailyStepGoal", 0)
     sleeping_seconds = data.get("sleepingSeconds", 0)
