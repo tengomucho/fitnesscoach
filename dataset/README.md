@@ -49,6 +49,19 @@ This will generate:
 - `dataset/fitness_coach_function_calling.json` - JSON format for inspection
 - `dataset/fitness_coach_function_calling.jsonl` - JSONL format for training pipelines
 
+### Clean Up Generated Files
+
+To remove all generated dataset files and directories:
+
+```bash
+python dataset/generate_dataset.py --cleanup
+```
+
+This will remove:
+- `dataset/fitness_coach_function_calling.json`
+- `dataset/fitness_coach_function_calling.jsonl`
+- `dataset/fitness_coach_function_calling/` (directory)
+
 ### Load the Dataset
 
 Using HuggingFace datasets library:

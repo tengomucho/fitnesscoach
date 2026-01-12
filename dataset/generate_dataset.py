@@ -14,8 +14,11 @@ for the following fitness tracking functions:
 """
 
 import json
+import os
+import shutil
 from typing import Any
 
+import typer
 from datasets import Dataset
 
 
@@ -320,6 +323,35 @@ def format_for_function_calling(examples: list[dict[str, Any]]) -> dict[str, lis
     return formatted_data
 
 
+def cleanup_generated_files():
+    """Remove all generated dataset files and directories."""
+    files_to_remove = [
+        "dataset/fitness_coach_function_calling.json",
+        "dataset/fitness_coach_function_calling.jsonl",
+    ]
+    dirs_to_remove = ["dataset/fitness_coach_function_calling"]
+
+    print("Cleaning up generated files...")
+
+    # Remove files
+    for file_path in files_to_remove:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            print(f"  Removed: {file_path}")
+        else:
+            print(f"  Not found: {file_path}")
+
+    # Remove directories
+    for dir_path in dirs_to_remove:
+        if os.path.exists(dir_path):
+            shutil.rmtree(dir_path)
+            print(f"  Removed directory: {dir_path}")
+        else:
+            print(f"  Not found: {dir_path}")
+
+    print("\nCleanup complete!")
+
+
 def main():
     """Generate and save the dataset."""
     print("Generating training examples...")
@@ -402,5 +434,23 @@ def main():
     print("  3. Upload: dataset.push_to_hub('your-username/fitness-coach-function-calling')")
 
 
+app = typer.Typer(help="Generate training dataset for FunctionGemma or cleanup generated files.")
+
+
+@app.command()
+def generate(
+    cleanup: bool = typer.Option(
+        False,
+        "--cleanup",
+        help="Remove all generated dataset files and directories",
+    ),
+):
+    """Generate training dataset for FunctionGemma or cleanup generated files."""
+    if cleanup:
+        cleanup_generated_files()
+    else:
+        main()
+
+
 if __name__ == "__main__":
-    main()
+    app()
