@@ -22,16 +22,22 @@ The dataset includes examples for the following fitness tracking functions:
 
 ## Installation
 
-Install the required dependencies:
+Install the required dependencies using the requirements file:
 
 ```bash
-uv pip install datasets
+uv pip install -r dataset/requirements.txt
 ```
 
 Or using pip:
 
 ```bash
-pip install datasets
+pip install -r dataset/requirements.txt
+```
+
+Alternatively, install packages individually:
+
+```bash
+uv pip install datasets typer
 ```
 
 ## Usage

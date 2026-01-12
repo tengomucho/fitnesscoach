@@ -1,0 +1,8 @@
+# Requirements for dataset generation script
+# Install with: pip install -r requirements.txt or uv pip install -r requirements.txt
+
+# HuggingFace datasets library for creating and managing datasets
+datasets>=2.14.0
+
+# Typer for CLI interface
+typer>=0.9.0
