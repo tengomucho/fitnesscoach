@@ -6,11 +6,13 @@ from . import provider
 
 app = typer.Typer()
 
+
 @app.command()
 def login():
     """Login to Garmin Connect."""
     provider.login()
     print("✅ Successfully logged in")
+
 
 @app.command()
 def summary():
@@ -26,6 +28,6 @@ def summary():
     print(f"Active Minutes: {active_seconds // 60}")
     print(f"Sleeping Minutes: {sleeping_seconds // 60}")
 
+
 if __name__ == "__main__":
     app()
-

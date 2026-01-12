@@ -20,6 +20,7 @@ CONFIG_DIR = os.path.expanduser(f"~/.{SERVICE_NAME}")
 CACHED_DATA = os.path.join(CONFIG_DIR, "cached_data.json")
 CACHE_EXPIRATION_MINUTES = 60
 
+
 class Config:
     def __init__(self):
         self.config_file = os.path.join(CONFIG_DIR, "config.json")
@@ -43,8 +44,10 @@ class Config:
         with open(self.config_file, "w") as f:
             json.dump(self.config, f)
 
+
 # Initialize config
 config = Config()
+
 
 def init_api(email: str | None = None, password: str | None = None) -> Garmin | None:
     """Initialize Garmin API with smart error handling and recovery."""
@@ -73,9 +76,7 @@ def init_api(email: str | None = None, password: str | None = None) -> Garmin | 
                 return None
 
             print("Logging in with credentials...")
-            garmin = Garmin(
-                email=email, password=password, is_cn=False, return_on_mfa=True
-            )
+            garmin = Garmin(email=email, password=password, is_cn=False, return_on_mfa=True)
             access_token, refresh_token = garmin.login()
 
             if access_token == "needs_mfa":
@@ -140,6 +141,7 @@ def init_api(email: str | None = None, password: str | None = None) -> Garmin | 
             print("\nLogin cancelled by user")
             return None
 
+
 def login() -> Garmin:
     username = config.get("username")
     if username is None:
@@ -156,6 +158,7 @@ def login() -> Garmin:
     config.set("username", username)
     keyring.set_password(SERVICE_NAME, username, password)
     return garmin
+
 
 def get_summary():
     data = None
@@ -177,15 +180,18 @@ def get_summary():
             json.dump(data, f)
     return data
 
+
 def get_steps() -> int:
     """Get the steps from the summary."""
     summary = get_summary()
     return summary.get("totalSteps", 0)
 
+
 def get_daily_step_goal() -> int:
     """Get the daily step goal from the summary."""
     summary = get_summary()
     return summary.get("dailyStepGoal", 0)
+
 
 def get_goal_progress() -> float:
     """Get the goal progress from the summary."""
@@ -195,17 +201,20 @@ def get_goal_progress() -> float:
         return 0.0
     return (steps / daily_step_goal) * 100
 
+
 def get_sleeping_minutes() -> int:
     """Get the sleeping minutes from the summary."""
     summary = get_summary()
     sleeping_seconds = summary.get("sleepingSeconds", 0)
     return sleeping_seconds // 60
 
+
 def get_active_minutes() -> int:
     """Get the active minutes from the summary."""
     summary = get_summary()
     active_seconds = summary.get("activeSeconds", 0)
     return active_seconds // 60
+
 
 def get_heart_rate() -> tuple[int, int]:
     """Get the minimum and maximum heart rate from the summary."""
@@ -214,9 +223,9 @@ def get_heart_rate() -> tuple[int, int]:
     max_heart_rate = summary.get("maxHeartRate", 0)
     return min_heart_rate, max_heart_rate
 
+
 def get_body_battery_level() -> int:
     """Get the body battery level from the summary."""
     summary = get_summary()
     most_recent_body_battery_level = summary.get("bodyBatteryMostRecentValue", 0)
     return most_recent_body_battery_level
-
