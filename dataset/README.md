@@ -113,25 +113,47 @@ The generated dataset contains:
   - `get_heart_rate`: 6 examples
   - `get_body_battery_level`: 7 examples
 
-## Publishing to HuggingFace Hub
+## Published Dataset
 
-To share your dataset on HuggingFace:
+The dataset is already published on HuggingFace Hub:
+- **Repository**: https://huggingface.co/datasets/tengomucho/fitness-coach-function-calling
+- **Total examples**: 213
+- **Examples per function**: 22-37
 
-### 1. Install HuggingFace Hub
+You can load it directly with:
+
+```python
+from datasets import load_dataset
+
+dataset = load_dataset("tengomucho/fitness-coach-function-calling")
+```
+
+## Publishing Your Own Version
+
+To publish your own version to HuggingFace Hub:
+
+### Option 1: Using the Upload Script (Recommended)
+
+```bash
+python dataset/upload_to_hub.py
+```
+
+This script will:
+1. Check authentication
+2. Load the dataset
+3. Upload to HuggingFace Hub
+4. Provide the dataset URL
+
+### Option 2: Manual Upload
+
+Install HuggingFace Hub and login:
 
 ```bash
 uv pip install huggingface_hub
-```
-
-### 2. Login to HuggingFace
-
-```bash
 huggingface-cli login
 ```
 
-Enter your HuggingFace access token when prompted.
-
-### 3. Upload the Dataset
+Then upload with Python:
 
 ```python
 from datasets import load_from_disk
@@ -139,8 +161,8 @@ from datasets import load_from_disk
 # Load the dataset
 dataset = load_from_disk("dataset/fitness_coach_function_calling")
 
-# Push to HuggingFace Hub
-dataset.push_to_hub("tengomucho/fitness-coach-function-calling")
+# Push to HuggingFace Hub (change to your username)
+dataset.push_to_hub("your-username/fitness-coach-function-calling")
 ```
 
 Or use the command line:
