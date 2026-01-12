@@ -52,20 +52,16 @@ python dataset/generate_dataset.py
 
 This will generate:
 - `dataset/fitness_coach_function_calling/` - HuggingFace Dataset format
-- `dataset/fitness_coach_function_calling.json` - JSON format for inspection
-- `dataset/fitness_coach_function_calling.jsonl` - JSONL format for training pipelines
 
 ### Clean Up Generated Files
 
-To remove all generated dataset files and directories:
+To remove the generated dataset directory:
 
 ```bash
 python dataset/generate_dataset.py --cleanup
 ```
 
 This will remove:
-- `dataset/fitness_coach_function_calling.json`
-- `dataset/fitness_coach_function_calling.jsonl`
 - `dataset/fitness_coach_function_calling/` (directory)
 
 ### Load the Dataset
@@ -194,22 +190,12 @@ examples.extend([
 ])
 ```
 
-## Output Formats
+## Output Format
 
-### HuggingFace Dataset Format
+The dataset is saved in **HuggingFace Dataset format**:
 - Location: `dataset/fitness_coach_function_calling/`
 - Best for: Training with HuggingFace Transformers
-- Features: Optimized storage, fast loading, supports streaming
-
-### JSON Format
-- Location: `dataset/fitness_coach_function_calling.json`
-- Best for: Manual inspection, data exploration
-- Features: Human-readable, easy to edit
-
-### JSONL Format
-- Location: `dataset/fitness_coach_function_calling.jsonl`
-- Best for: Training pipelines, data processing tools
-- Features: One example per line, easy to stream
+- Features: Optimized storage, fast loading, supports streaming, built-in train/test splitting
 
 ## License
 

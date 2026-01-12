@@ -1,6 +1,2 @@
-# Generated dataset files
-*.json
-*.jsonl
-
-# HuggingFace dataset directory
+# Generated HuggingFace dataset directory
 fitness_coach_function_calling/

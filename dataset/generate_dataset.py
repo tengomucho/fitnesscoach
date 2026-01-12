@@ -748,21 +748,9 @@ def format_for_function_calling(examples: list[dict[str, Any]]) -> dict[str, lis
 
 def cleanup_generated_files():
     """Remove all generated dataset files and directories."""
-    files_to_remove = [
-        "dataset/fitness_coach_function_calling.json",
-        "dataset/fitness_coach_function_calling.jsonl",
-    ]
     dirs_to_remove = ["dataset/fitness_coach_function_calling"]
 
     print("Cleaning up generated files...")
-
-    # Remove files
-    for file_path in files_to_remove:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            print(f"  Removed: {file_path}")
-        else:
-            print(f"  Not found: {file_path}")
 
     # Remove directories
     for dir_path in dirs_to_remove:
@@ -799,35 +787,12 @@ def main():
         print(f"Assistant: {dataset[i]['assistant']}")
         print(f"Function: {dataset[i]['function_name']}")
 
-    # Save to disk in multiple formats
+    # Save to disk in HuggingFace Dataset format
     output_dir = "dataset/fitness_coach_function_calling"
 
     print(f"\nSaving dataset to {output_dir}...")
     dataset.save_to_disk(output_dir)
-    print("Saved dataset to disk format")
-
-    # Also save as JSON for easy inspection
-    json_path = "dataset/fitness_coach_function_calling.json"
-    print(f"Saving dataset to {json_path}...")
-    with open(json_path, "w") as f:
-        json.dump(formatted_data, f, indent=2)
-    print("Saved dataset to JSON format")
-
-    # Save as JSONL (common format for training)
-    jsonl_path = "dataset/fitness_coach_function_calling.jsonl"
-    print(f"Saving dataset to {jsonl_path}...")
-    with open(jsonl_path, "w") as f:
-        for i in range(len(dataset)):
-            row = {
-                "system": dataset[i]["system"],
-                "user": dataset[i]["user"],
-                "assistant": dataset[i]["assistant"],
-                "function_name": dataset[i]["function_name"],
-                "function_arguments": dataset[i]["function_arguments"],
-                "tools": dataset[i]["tools"],
-            }
-            f.write(json.dumps(row) + "\n")
-    print("Saved dataset to JSONL format")
+    print("Saved dataset to HuggingFace Dataset format")
 
     # Print summary statistics
     print("\n" + "=" * 50)
@@ -847,10 +812,8 @@ def main():
     print("Dataset generation complete!")
     print("=" * 50)
     print("\nFiles created:")
-    print(f"  1. {output_dir}/ (HuggingFace Dataset format)")
-    print(f"  2. {json_path} (JSON format)")
-    print(f"  3. {jsonl_path} (JSONL format)")
-    print("\nYou can now upload these to HuggingFace Hub!")
+    print(f"  {output_dir}/ (HuggingFace Dataset format)")
+    print("\nYou can now upload the dataset to HuggingFace Hub!")
     print("\nTo upload to HuggingFace:")
     print("  1. Install huggingface_hub: pip install huggingface_hub")
     print("  2. Login: huggingface-cli login")
