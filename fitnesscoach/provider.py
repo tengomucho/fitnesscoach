@@ -146,7 +146,15 @@ def login() -> Garmin:
     username = config.get("username")
     if username is None:
         username = typer.prompt("Enter your Garmin username")
-    password = keyring.get_password(SERVICE_NAME, username)
+
+    # Try to get password from: 1) env var, 2) keyring, 3) prompt
+    password = os.environ.get("SERVICE_PASSWORD")
+    if password is None:
+        try:
+            password = keyring.get_password(SERVICE_NAME, username)
+        except Exception as e:
+            print(f"[yellow]Warning: Keyring unavailable ({e})[/yellow]")
+            password = None
     if password is None:
         password = typer.prompt("Enter your Garmin password", hide_input=True)
 
@@ -156,7 +164,11 @@ def login() -> Garmin:
         raise typer.Exit(code=1)
 
     config.set("username", username)
-    keyring.set_password(SERVICE_NAME, username, password)
+    try:
+        keyring.set_password(SERVICE_NAME, username, password)
+    except Exception as e:
+        print(f"[yellow]Warning: Could not save password to keyring ({e})[/yellow]")
+        print("[yellow]Tip: Set SERVICE_PASSWORD environment variable to avoid re-entering password[/yellow]")
     return garmin
 
 
