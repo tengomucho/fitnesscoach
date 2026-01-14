@@ -3,7 +3,7 @@ name = "fitnesscoach"
 version = "0.1.0"
 description = "Smart fitness coach powered by AI"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = "==3.11.*"
 dependencies = [
     "garminconnect>=0.2.38",
     "keyring>=25.7.0",
