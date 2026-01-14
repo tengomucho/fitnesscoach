@@ -168,7 +168,8 @@ def login() -> Garmin:
         keyring.set_password(SERVICE_NAME, username, password)
     except Exception as e:
         print(f"[yellow]Warning: Could not save password to keyring ({e})[/yellow]")
-        print("[yellow]Tip: Set SERVICE_PASSWORD environment variable to avoid re-entering password[/yellow]")
+        if not os.environ.get("SERVICE_PASSWORD"):
+            print("[yellow]Tip: Set SERVICE_PASSWORD environment variable to avoid re-entering password[/yellow]")
     return garmin
 
 
