@@ -36,3 +36,8 @@ select = ["C", "E", "F", "I", "W"]
 
 [tool.ruff.lint.isort]
 lines-after-imports = 2
+
+[tool.uv.workspace]
+members = [
+    "finetune",
+]

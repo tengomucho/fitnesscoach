@@ -1,0 +1,28 @@
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Training outputs
+output/
+*.log
+
+# TensorBoard
+runs/
+events.out.tfevents.*
+
+# Model checkpoints
+checkpoint-*/
+*.pt
+*.pth
+*.bin
+*.safetensors
+
+# Cache
+.cache/
