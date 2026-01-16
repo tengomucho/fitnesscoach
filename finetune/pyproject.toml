@@ -1,0 +1,51 @@
+[project]
+name = "fitnesscoach_finetune"
+version = "0.1.0"
+description = "Fine-tune FunctionGemma for fitness coach function calling on TPU"
+readme = "README.md"
+requires-python = "==3.11.*"
+dependencies = [
+  "accelerate>=1.12.0",
+  "datasets>=4.4.1",
+  "evaluate>=0.4.6",
+  "peft>=0.18.0",
+  "scikit-learn>=1.7.2",
+  "torch==2.9.0",
+  "torch_xla[tpu,pallas]==2.9.0",
+  "transformers>=4.57.1",
+  "rich>=14.2.0",
+  "trl>=0.25.1",
+  "typer>=0.21.1",
+  "trackio>=0.15.0",
+]
+scripts = { fitnesscoach_finetune = "fitnesscoach_finetune.main:app" }
+
+[tool.setuptools.packages.find]
+include = ["fitnesscoach_finetune*"]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu" },
+]
+torch_xla = [
+    { index = "torch_xla_pallas" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "torch_xla_pallas"
+url = "https://us-python.pkg.dev/ml-oss-artifacts-published/jax/simple/"
+find-links = "https://storage.googleapis.com/jax-releases/libtpu_releases.html"
+explicit = true
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.6",
+]
+
+[tool.uv]
+prerelease = "allow"

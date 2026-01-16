@@ -42,7 +42,25 @@ This app uses data that is fetched from Garmin Connect, using the excellent `gar
 fitnesscoach login
 ```
 
-# Run tests
+## Fine-tuning FunctionGemma
+
+This project includes scripts to fine-tune Google's FunctionGemma model on the fitness coach function calling dataset using TPU.
+
+**Quick start on TPU v5litepod-8:**
+
+```bash
+uv pip install finetune
+```
+
+**What you get:**
+- Fine-tuned FunctionGemma model for fitness function calling
+- LoRA adapters for parameter-efficient training
+
+**Documentation:**
+- `finetune/README.md` - Complete guide and configuration options
+- Dataset: [tengomucho/fitness-coach-function-calling](https://huggingface.co/datasets/tengomucho/fitness-coach-function-calling)
+
+## Run tests
 
 To run tests you can just run
 
