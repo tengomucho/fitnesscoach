@@ -273,6 +273,7 @@ def train(model_id, dataset_id, output_dir, num_epochs, batch_size, learning_rat
     print()
     print("To upload the model to the Hugging Face Hub, run:")
     print("   model.push_to_hub('tenfomucho/functiongemma-fitness')")
+    print("   tokenizer.push_to_hub('tenfomucho/functiongemma-fitness')")
     print("=" * 60)
 
 
