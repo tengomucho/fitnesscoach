@@ -204,19 +204,40 @@ def get_summary(force_refresh: bool = False) -> dict[str, Any]:
 
 
 def get_steps() -> int:
-    """Get the steps from the summary."""
+    """Get the steps from the summary.
+
+    Args:
+        None
+
+    Returns:
+        int: The number of steps taken today
+    """
     summary = get_summary()
     return summary.get("totalSteps", 0)
 
 
 def get_daily_step_goal() -> int:
-    """Get the daily step goal from the summary."""
+    """Get the daily step goal from the summary.
+
+    Args:
+        None
+
+    Returns:
+        int: The daily step goal
+    """
     summary = get_summary()
     return summary.get("dailyStepGoal", 0)
 
 
 def get_goal_progress() -> float:
-    """Get the goal progress from the summary."""
+    """Get the goal progress of the day from the summary in percentage.
+
+    Args:
+        None
+
+    Returns:
+        float: The goal progress in percentage
+    """
     steps = get_steps()
     daily_step_goal = get_daily_step_goal()
     if daily_step_goal == 0:
@@ -225,21 +246,42 @@ def get_goal_progress() -> float:
 
 
 def get_sleeping_minutes() -> int:
-    """Get the sleeping minutes from the summary."""
+    """Get the sleeping minutes of the day from the summary.
+
+    Args:
+        None
+
+    Returns:
+        int: The number of sleeping minutes
+    """
     summary = get_summary()
     sleeping_seconds = summary.get("sleepingSeconds", 0)
     return sleeping_seconds // 60
 
 
 def get_active_minutes() -> int:
-    """Get the active minutes from the summary."""
+    """Get the active minutes of the day from the summary.
+
+    Args:
+        None
+
+    Returns:
+        int: The number of active minutes
+    """
     summary = get_summary()
     active_seconds = summary.get("activeSeconds", 0)
     return active_seconds // 60
 
 
 def get_heart_rate() -> tuple[int, int]:
-    """Get the minimum and maximum heart rate from the summary."""
+    """Get the minimum and maximum heart rate of the day from the summary.
+
+    Args:
+        None
+
+    Returns:
+        tuple[int, int]: The minimum and maximum heart rate
+    """
     summary = get_summary()
     min_heart_rate = summary.get("minHeartRate", 0)
     max_heart_rate = summary.get("maxHeartRate", 0)
@@ -247,7 +289,14 @@ def get_heart_rate() -> tuple[int, int]:
 
 
 def get_body_battery_level() -> int:
-    """Get the body battery level from the summary."""
+    """Get the body battery level of the day from the summary.
+
+    Args:
+        None
+
+    Returns:
+        int: The body battery level
+    """
     summary = get_summary()
     most_recent_body_battery_level = summary.get("bodyBatteryMostRecentValue", 0)
     return most_recent_body_battery_level
