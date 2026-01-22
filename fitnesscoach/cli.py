@@ -34,10 +34,10 @@ def summary(force_refresh: bool = False):
 
 
 @app.command()
-def chat():
+def chat(question: str | None = None, verbose: bool = False):
     """Chat with the Fitness Coach."""
     from .coach import chat
-    chat()
+    chat(question, verbose=verbose)
 
 
 if __name__ == "__main__":

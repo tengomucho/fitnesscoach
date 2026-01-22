@@ -9,6 +9,9 @@ dependencies = [
     "keyring>=25.7.0",
     "rich>=14.2.0",
     "typer>=0.21.1",
+    "peft>=0.18.0",
+    "transformers>=4.57.1",
+    "torch>=2.9.0",
 ]
 scripts = { fitnesscoach = "fitnesscoach.cli:app" }
 
@@ -36,8 +39,3 @@ select = ["C", "E", "F", "I", "W"]
 
 [tool.ruff.lint.isort]
 lines-after-imports = 2
-
-[tool.uv.workspace]
-members = [
-    "finetune",
-]
