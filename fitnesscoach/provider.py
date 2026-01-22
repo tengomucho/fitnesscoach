@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+from typing import Any
 
 import keyring
 import requests
@@ -173,9 +174,17 @@ def login() -> Garmin:
     return garmin
 
 
-def get_summary():
+def get_summary(force_refresh: bool = False) -> dict[str, Any]:
+    """Get the summary from the Garmin API.
+
+    Args:
+        force_refresh: Whether to force a refresh of the summary (do not use cached data).
+
+    Returns:
+        dict: The summary data.
+    """
     data = None
-    if os.path.exists(CACHED_DATA):
+    if os.path.exists(CACHED_DATA) and not force_refresh:
         with open(CACHED_DATA, "r") as f:
             cached_data = json.load(f)
             timestamp_str = cached_data.get("timestamp", None)
