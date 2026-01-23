@@ -47,7 +47,7 @@ def generate_function_definitions() -> list[dict[str, Any]]:
     functions = [
         get_steps,
         get_daily_step_goal,
-        get_goal_progress,
+        get_step_goal_progress,
         get_sleeping_minutes,
         get_active_minutes,
         get_heart_rate,

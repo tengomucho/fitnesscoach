@@ -18,7 +18,7 @@ import torch_xla.runtime as xr
 import typer
 from datasets import load_dataset
 from peft import LoraConfig
-from rich import print
+
 from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
 from transformers.modeling_utils import unwrap_model
 from trl import SFTConfig, SFTTrainer
@@ -30,6 +30,19 @@ xr.use_spmd()
 app = typer.Typer(help="Fine-tune FunctionGemma for fitness coach function calling on TPU.")
 
 
+def parse_json_if_str(value):
+    """Parse JSON if the value is a JSON string, otherwise return as-is."""
+    if isinstance(value, str):
+        stripped = value.strip()
+        if (stripped.startswith("{") and stripped.endswith("}")) or (
+            stripped.startswith("[") and stripped.endswith("]")
+        ):
+            try:
+                return json.loads(stripped)
+            except json.JSONDecodeError:
+                return value
+    return value
+
 def format_for_functiongemma(example, tokenizer):
     """
     Format fitness coach dataset for FunctionGemma fine-tuning.
@@ -38,52 +51,14 @@ def format_for_functiongemma(example, tokenizer):
     https://colab.research.google.com/github/google/generative-ai-docs/blob/main/site/en/gemma/docs/functiongemma/finetuning-with-functiongemma.ipynb
 
     Args:
-        example: Dataset example with 'user', 'assistant', and 'tools' fields
+        example: Dataset example with 'messages' and 'tools' fields
         tokenizer: The tokenizer with chat template support
 
     Returns:
         str: Formatted text ready for training
     """
-    # Parse the tools from the dataset
-    tools_raw = json.loads(example["tools"])
-
-    # Parse the function call from assistant response
-    function_call = json.loads(example["assistant"])
-
-    # Wrap tools in the format expected by FunctionGemma template
-    # The template expects: [{"type": "function", "function": {...}}]
-    tools = [
-        {
-            "type": "function",
-            "function": tool
-        }
-        for tool in tools_raw
-    ]
-
-    # Create the messages in FunctionGemma format following the official notebook
-    # Use "developer", "user", and "assistant" roles (not "model")
-    messages = [
-        {
-            "role": "developer",
-            "content": example["system"]
-        },
-        {
-            "role": "user",
-            "content": example["user"]
-        },
-        {
-            "role": "assistant",
-            "tool_calls": [
-                {
-                    "type": "function",
-                    "function": {
-                        "name": function_call["name"],
-                        "arguments": function_call["arguments"]  # Keep as dict, not JSON string
-                    }
-                }
-            ]
-        }
-    ]
+    messages = json.loads(example["messages"])
+    tools = json.loads(example.get("tools", "[]"))
 
     # Use apply_chat_template with tools parameter
     try:
@@ -95,10 +70,9 @@ def format_for_functiongemma(example, tokenizer):
         )
         return formatted_text
     except Exception as e:
-        print(f"[red]Error formatting example: {e}[/red]")
+        print(f"❌ Error formatting example: {e}")
         print(f"Messages: {messages}")
         print(f"Tools: {tools}")
-        print(f"Function call: {function_call}")
         raise
 
 def train(model_id, dataset_id, output_dir, num_epochs, batch_size, learning_rate, max_steps):
@@ -212,7 +186,6 @@ def train(model_id, dataset_id, output_dir, num_epochs, batch_size, learning_rat
         # Miscellaneous
         dataloader_drop_last=True,
         bf16=True,
-        save_safetensors=True,
         report_to="trackio",
 
         # FSDP configuration
@@ -220,7 +193,7 @@ def train(model_id, dataset_id, output_dir, num_epochs, batch_size, learning_rat
     )
 
     print("\n" + "=" * 60)
-    print("Training Configuration:")
+    print("🔍 Training Configuration:")
     print("=" * 60)
     print(f"Model: {model_id}")
     print(f"Dataset: {dataset_id}")
@@ -235,7 +208,7 @@ def train(model_id, dataset_id, output_dir, num_epochs, batch_size, learning_rat
     print("=" * 60 + "\n")
 
     # Initialize and run trainer
-    print("Initializing SFTTrainer...")
+    print("🔄 Initializing SFTTrainer...")
     trainer = SFTTrainer(
         model=model,
         train_dataset=dataset["train"],
@@ -246,15 +219,13 @@ def train(model_id, dataset_id, output_dir, num_epochs, batch_size, learning_rat
         formatting_func=lambda example: format_for_functiongemma(example, tokenizer),
     )
 
-    trainer._save_tpu
-
-    print("Starting training...")
+    print("🏃 Starting training...")
     trainer.train()
 
-    print("\nTraining complete!")
+    print("\n🏁 Training complete!")
 
     # Save the final LoRA adapter model and tokenizer
-    print("Saving LoRA adapter and tokenizer...")
+    print("💾 Saving LoRA adapter and tokenizer...")
 
     # This ensures all adapter weights are gathered and saved correctly after unwrapping the model on the TPU when
     # using FSDPv2. This is a workaround, see here: https://github.com/huggingface/transformers/issues/36004#issuecomment-2635144319
@@ -272,8 +243,8 @@ def train(model_id, dataset_id, output_dir, num_epochs, batch_size, learning_rat
     print(f"  tokenizer = AutoTokenizer.from_pretrained('{output_dir}')")
     print()
     print("To upload the model to the Hugging Face Hub, run:")
-    print("   model.push_to_hub('tenfomucho/functiongemma-fitness')")
-    print("   tokenizer.push_to_hub('tenfomucho/functiongemma-fitness')")
+    print("   model.push_to_hub('tengomucho/functiongemma-fitness')")
+    print("   tokenizer.push_to_hub('tengomucho/functiongemma-fitness')")
     print("=" * 60)
 
 
@@ -362,9 +333,6 @@ def train_command(
         else:
             print("Aborting training to avoid overwriting existing model")
             return
-
-    # Ask to type return to continue
-    typer.confirm("Are you sure you want to continue?", default=True, abort=True)
 
     print("Starting training...")
 
