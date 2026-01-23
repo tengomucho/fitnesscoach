@@ -4,5 +4,8 @@
 # HuggingFace datasets library for creating and managing datasets
 datasets>=2.14.0
 
+# Transformers library for get_json_schema utility
+transformers>=4.57.1
+
 # Typer for CLI interface
 typer>=0.9.0

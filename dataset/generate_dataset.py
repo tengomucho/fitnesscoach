@@ -11,6 +11,14 @@ for the following fitness tracking functions:
 - get_active_minutes
 - get_heart_rate
 - get_body_battery_level
+
+NOTE: Empty dicts are replaced with "empty_dict_placeholder" to avoid Parquet serialization issues.
+To restore empty dicts when loading the dataset, use the restore_empty_dicts() function below.
+
+Example usage after loading from HuggingFace:
+    from datasets import load_dataset
+    dataset = load_dataset('your-username/fitness-coach-function-calling')
+    dataset = dataset.map(restore_empty_dicts)
 """
 
 import json
@@ -19,58 +27,63 @@ import shutil
 from typing import Any
 
 import typer
+from rich import print
 from datasets import Dataset
+from transformers.utils import get_json_schema
+
+# Import the actual functions from fitnesscoach.provider
+from fitnesscoach.provider import (
+    get_steps,
+    get_daily_step_goal,
+    get_step_goal_progress,
+    get_sleeping_minutes,
+    get_active_minutes,
+    get_heart_rate,
+    get_body_battery_level,
+)
+
+def generate_function_definitions() -> list[dict[str, Any]]:
+    """Generate function definitions from actual provider functions using transformers.utils.get_json_schema."""
+    functions = [
+        get_steps,
+        get_daily_step_goal,
+        get_goal_progress,
+        get_sleeping_minutes,
+        get_active_minutes,
+        get_heart_rate,
+        get_body_battery_level,
+    ]
+
+    function_definitions = []
+    for func in functions:
+        schema = get_json_schema(func)
+        # get_json_schema returns a dict with "type": "function" and "function": {...}
+        # We need to extract just the inner function schema
+        if isinstance(schema, dict) and "function" in schema:
+            schema = schema["function"]
+
+        # Add empty list to required
+        schema["parameters"]["required"] = []
+
+        function_definitions.append({
+            "type": "function",
+            "function": schema
+        })
+
+    return function_definitions
 
 
-# Define function schemas compatible with function calling format
-FUNCTION_DEFINITIONS = [
-    {
-        "name": "get_steps",
-        "description": "Get the total number of steps taken today from the Garmin watch.",
-        "parameters": {"type": "object", "properties": {}, "required": []},
-    },
-    {
-        "name": "get_daily_step_goal",
-        "description": "Get the daily step goal set on the Garmin watch.",
-        "parameters": {"type": "object", "properties": {}, "required": []},
-    },
-    {
-        "name": "get_step_goal_progress",
-        "description": "Get the progress towards the daily step goal as a percentage.",
-        "parameters": {"type": "object", "properties": {}, "required": []},
-    },
-    {
-        "name": "get_sleeping_minutes",
-        "description": "Get the total minutes of sleep recorded today from the Garmin watch.",
-        "parameters": {"type": "object", "properties": {}, "required": []},
-    },
-    {
-        "name": "get_active_minutes",
-        "description": "Get the total active minutes recorded today from the Garmin watch.",
-        "parameters": {"type": "object", "properties": {}, "required": []},
-    },
-    {
-        "name": "get_heart_rate",
-        "description": "Get the minimum and maximum heart rate recorded today from the Garmin watch. Returns a tuple of (min_heart_rate, max_heart_rate).",
-        "parameters": {"type": "object", "properties": {}, "required": []},
-    },
-    {
-        "name": "get_body_battery_level",
-        "description": "Get the most recent body battery level from the Garmin watch. Body battery is a measure of energy reserves, ranging from 0 to 100.",
-        "parameters": {"type": "object", "properties": {}, "required": []},
-    },
-]
+# Generate function definitions automatically from provider functions
+FUNCTION_DEFINITIONS = generate_function_definitions()
 
 
-def create_system_prompt() -> str:
-    """Create a system prompt that describes available functions."""
-    return f"""You are a helpful fitness assistant with access to Garmin fitness data. You can help users track their health and fitness metrics.
+def create_developer_message() -> str:
+    """Create the developer message that describes the assistant's role.
 
-You have access to the following functions:
-
-{json.dumps(FUNCTION_DEFINITIONS, indent=2)}
-
-When a user asks about their fitness data, call the appropriate function(s) to retrieve the information."""
+    Note that we use default model message from FunctionGemma, see:
+    https://ai.google.dev/gemma/docs/functiongemma/function-calling-with-hf
+    """
+    return "You are a model that can do function calling with the following functions"
 
 
 def generate_training_examples() -> list[dict[str, Any]]:
@@ -706,41 +719,48 @@ def generate_training_examples() -> list[dict[str, Any]]:
 
 
 def format_for_function_calling(examples: list[dict[str, Any]]) -> dict[str, list]:
-    """Format examples for function calling training.
+    """Format examples for FunctionGemma training.
 
     Creates a dataset with the following columns:
-    - system: System prompt describing available functions
-    - user: User's query
-    - assistant: Assistant's response with function call in JSON format
-    - function_name: The name of the function being called
-    - function_arguments: The arguments as JSON string
+    - messages: Array of message objects with role and content
+    - tools: Available function definitions
     """
 
-    system_prompt = create_system_prompt()
+    developer_message = create_developer_message()
 
     formatted_data = {
-        "system": [],
-        "user": [],
-        "assistant": [],
-        "function_name": [],
-        "function_arguments": [],
-        "tools": [],  # Store the available tools for each example
+        "messages": [],
+        "tools": [],
     }
 
     for example in examples:
-        formatted_data["system"].append(system_prompt)
-        formatted_data["user"].append(example["user_query"])
-
-        # Format assistant response as function call
+        # Create messages array following FunctionGemma format
         function_call = example["function_call"]
-        assistant_response = json.dumps(function_call)
-        formatted_data["assistant"].append(assistant_response)
 
-        # Add function details separately for easier filtering/analysis
-        formatted_data["function_name"].append(function_call["name"])
-        formatted_data["function_arguments"].append(json.dumps(function_call["arguments"]))
+        messages = [
+            {
+                "role": "developer",
+                "content": developer_message
+            },
+            {
+                "role": "user",
+                "content": example["user_query"]
+            },
+            {
+                "role": "assistant",
+                "tool_calls": [
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": function_call["name"],
+                            "arguments": function_call["arguments"]
+                        }
+                    }
+                ]
+            }
+        ]
 
-        # Add available tools
+        formatted_data["messages"].append(json.dumps(messages))
         formatted_data["tools"].append(json.dumps(FUNCTION_DEFINITIONS))
 
     return formatted_data
@@ -769,7 +789,7 @@ def main():
     examples = generate_training_examples()
     print(f"Generated {len(examples)} training examples")
 
-    print("\nFormatting examples for function calling...")
+    print("\nFormatting examples for FunctionGemma...")
     formatted_data = format_for_function_calling(examples)
 
     print("Creating HuggingFace dataset...")
@@ -783,9 +803,8 @@ def main():
     print("\nSample examples:")
     for i in range(min(3, len(dataset))):
         print(f"\n--- Example {i + 1} ---")
-        print(f"User: {dataset[i]['user']}")
-        print(f"Assistant: {dataset[i]['assistant']}")
-        print(f"Function: {dataset[i]['function_name']}")
+        example = dataset[i]
+        print(example)
 
     # Save to disk in HuggingFace Dataset format
     output_dir = "dataset/fitness_coach_function_calling"
@@ -803,7 +822,15 @@ def main():
     # Count examples per function
     from collections import Counter
 
-    function_counts = Counter(dataset["function_name"])
+    function_counts = Counter()
+    for messages in dataset["messages"]:
+        messages = json.loads(messages)
+        # Extract function name from assistant's tool_calls
+        for msg in messages:
+            if msg["role"] == "assistant" and "tool_calls" in msg:
+                for tool_call in msg["tool_calls"]:
+                    function_counts[tool_call["function"]["name"]] += 1
+
     print("\nExamples per function:")
     for func_name, count in sorted(function_counts.items()):
         print(f"  {func_name}: {count}")
@@ -811,8 +838,8 @@ def main():
     print("\n" + "=" * 50)
     print("Dataset generation complete!")
     print("=" * 50)
-    print("\nFiles created:")
-    print(f"  {output_dir}/ (HuggingFace Dataset format)")
+    print("\nFiles created in:")
+    print(f"  {output_dir}")
     print("\nYou can now upload the dataset to HuggingFace Hub!")
     print("\nTo upload to HuggingFace:")
     print("  1. Install huggingface_hub: pip install huggingface_hub")
