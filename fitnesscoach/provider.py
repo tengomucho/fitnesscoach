@@ -204,7 +204,7 @@ def get_summary(force_refresh: bool = False) -> dict[str, Any]:
 
 
 def get_steps() -> int:
-    """Get the steps from the summary.
+    """Get the number of steps walked today.
 
     Args:
         None
@@ -217,7 +217,7 @@ def get_steps() -> int:
 
 
 def get_daily_step_goal() -> int:
-    """Get the daily step goal from the summary.
+    """Get the daily step goal for today.
 
     Args:
         None
@@ -230,13 +230,13 @@ def get_daily_step_goal() -> int:
 
 
 def get_goal_progress() -> float:
-    """Get the goal progress of the day from the summary in percentage.
+    """Get the step goal progress for today in percentage.
 
     Args:
         None
 
     Returns:
-        float: The goal progress in percentage
+        float: The step goal progress in percentage
     """
     steps = get_steps()
     daily_step_goal = get_daily_step_goal()
@@ -246,7 +246,7 @@ def get_goal_progress() -> float:
 
 
 def get_sleeping_minutes() -> int:
-    """Get the sleeping minutes of the day from the summary.
+    """Get the number of minutes that the user has slept.
 
     Args:
         None
@@ -260,7 +260,7 @@ def get_sleeping_minutes() -> int:
 
 
 def get_active_minutes() -> int:
-    """Get the active minutes of the day from the summary.
+    """Get the number of minutes that the user has been active today.
 
     Args:
         None
@@ -274,7 +274,7 @@ def get_active_minutes() -> int:
 
 
 def get_heart_rate() -> tuple[int, int]:
-    """Get the minimum and maximum heart rate of the day from the summary.
+    """Get the minimum and maximum heart rate measured today.
 
     Args:
         None
@@ -289,7 +289,7 @@ def get_heart_rate() -> tuple[int, int]:
 
 
 def get_body_battery_level() -> int:
-    """Get the body battery level of the day from the summary.
+    """Get the current body battery level.
 
     Args:
         None
