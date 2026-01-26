@@ -229,20 +229,20 @@ def get_daily_step_goal() -> int:
     return summary.get("dailyStepGoal", 0)
 
 
-def get_step_goal_progress() -> float:
+def get_step_goal_progress() -> int:
     """Get the step goal progress for today in percentage.
 
     Args:
         None
 
     Returns:
-        float: The step goal progress in percentage
+        int: The step goal progress in percentage
     """
     steps = get_steps()
     daily_step_goal = get_daily_step_goal()
     if daily_step_goal == 0:
-        return 0.0
-    return (steps / daily_step_goal) * 100
+        return 0
+    return int((steps / daily_step_goal) * 100)
 
 
 def get_sleeping_minutes() -> int:
