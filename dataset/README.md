@@ -14,7 +14,7 @@ The dataset includes examples for the following fitness tracking functions:
 |----------|-------------|
 | `get_steps()` | Get total steps taken today |
 | `get_daily_step_goal()` | Get the daily step goal |
-| `get_goal_progress()` | Get progress towards daily step goal (%) |
+| `get_step_goal_progress()` | Get progress towards daily step goal (%) |
 | `get_sleeping_minutes()` | Get total sleep duration in minutes |
 | `get_active_minutes()` | Get total active minutes |
 | `get_heart_rate()` | Get min and max heart rate |
@@ -107,7 +107,7 @@ The generated dataset contains:
 - **Examples per function**:
   - `get_steps`: 6 examples
   - `get_daily_step_goal`: 4 examples
-  - `get_goal_progress`: 7 examples
+  - `get_step_goal_progress`: 7 examples
   - `get_sleeping_minutes`: 6 examples
   - `get_active_minutes`: 6 examples
   - `get_heart_rate`: 6 examples

@@ -6,7 +6,7 @@ This script creates synthetic examples of user queries and corresponding functio
 for the following fitness tracking functions:
 - get_steps
 - get_daily_step_goal
-- get_goal_progress
+- get_step_goal_progress
 - get_sleeping_minutes
 - get_active_minutes
 - get_heart_rate
@@ -35,7 +35,7 @@ FUNCTION_DEFINITIONS = [
         "parameters": {"type": "object", "properties": {}, "required": []},
     },
     {
-        "name": "get_goal_progress",
+        "name": "get_step_goal_progress",
         "description": "Get the progress towards the daily step goal as a percentage.",
         "parameters": {"type": "object", "properties": {}, "required": []},
     },
@@ -211,95 +211,95 @@ def generate_training_examples() -> list[dict[str, Any]]:
         ]
     )
 
-    # Examples for get_goal_progress - expanded
+    # Examples for get_step_goal_progress - expanded
     examples.extend(
         [
             # Basic queries
             {
                 "user_query": "How close am I to my step goal?",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
             {
                 "user_query": "What's my progress towards my daily goal?",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
             {
                 "user_query": "Am I close to reaching my step target?",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
             {
                 "user_query": "Show me my goal progress",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
             {
                 "user_query": "Have I hit my step goal yet?",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
             {
                 "user_query": "What percentage of my step goal have I completed?",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
             # Informal
-            {"user_query": "am i close to my goal", "function_call": {"name": "get_goal_progress", "arguments": {}}},
-            {"user_query": "how far from goal", "function_call": {"name": "get_goal_progress", "arguments": {}}},
-            {"user_query": "did i hit my goal", "function_call": {"name": "get_goal_progress", "arguments": {}}},
-            {"user_query": "goal progress?", "function_call": {"name": "get_goal_progress", "arguments": {}}},
-            {"user_query": "how much left", "function_call": {"name": "get_goal_progress", "arguments": {}}},
-            {"user_query": "percentage done", "function_call": {"name": "get_goal_progress", "arguments": {}}},
+            {"user_query": "am i close to my goal", "function_call": {"name": "get_step_goal_progress", "arguments": {}}},
+            {"user_query": "how far from goal", "function_call": {"name": "get_step_goal_progress", "arguments": {}}},
+            {"user_query": "did i hit my goal", "function_call": {"name": "get_step_goal_progress", "arguments": {}}},
+            {"user_query": "goal progress?", "function_call": {"name": "get_step_goal_progress", "arguments": {}}},
+            {"user_query": "how much left", "function_call": {"name": "get_step_goal_progress", "arguments": {}}},
+            {"user_query": "percentage done", "function_call": {"name": "get_step_goal_progress", "arguments": {}}},
             # Formal
             {
                 "user_query": "Could you please show me my progress towards my daily step goal?",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
             {
                 "user_query": "I would like to know my goal completion percentage",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
             {
                 "user_query": "Please display my step goal progress",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
             # Different phrasings
             {
                 "user_query": "How much of my goal have I completed?",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
             {
                 "user_query": "What's my step goal completion rate?",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
             {
                 "user_query": "Check if I reached my goal",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
-            {"user_query": "Did I make my target?", "function_call": {"name": "get_goal_progress", "arguments": {}}},
-            {"user_query": "Am I on track?", "function_call": {"name": "get_goal_progress", "arguments": {}}},
-            {"user_query": "Show progress", "function_call": {"name": "get_goal_progress", "arguments": {}}},
-            {"user_query": "How far along am I?", "function_call": {"name": "get_goal_progress", "arguments": {}}},
+            {"user_query": "Did I make my target?", "function_call": {"name": "get_step_goal_progress", "arguments": {}}},
+            {"user_query": "Am I on track?", "function_call": {"name": "get_step_goal_progress", "arguments": {}}},
+            {"user_query": "Show progress", "function_call": {"name": "get_step_goal_progress", "arguments": {}}},
+            {"user_query": "How far along am I?", "function_call": {"name": "get_step_goal_progress", "arguments": {}}},
             # Contextual
             {
                 "user_query": "I've been walking a lot, did I reach my goal?",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
             {
                 "user_query": "Just finished my workout, how close to goal?",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
             {
                 "user_query": "Before bed, want to check if I hit my goal",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
             {
                 "user_query": "Is it worth going for another walk to hit my goal?",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
             {
                 "user_query": "Halfway through the day, am I on pace?",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
             # Typos
-            {"user_query": "goal progres", "function_call": {"name": "get_goal_progress", "arguments": {}}},
-            {"user_query": "how close to gaol", "function_call": {"name": "get_goal_progress", "arguments": {}}},
+            {"user_query": "goal progres", "function_call": {"name": "get_step_goal_progress", "arguments": {}}},
+            {"user_query": "how close to gaol", "function_call": {"name": "get_step_goal_progress", "arguments": {}}},
         ]
     )
 
@@ -639,11 +639,11 @@ def generate_training_examples() -> list[dict[str, Any]]:
     examples.extend(
         [
             {"user_query": "Give me a fitness update", "function_call": {"name": "get_steps", "arguments": {}}},
-            {"user_query": "How am I doing today?", "function_call": {"name": "get_goal_progress", "arguments": {}}},
+            {"user_query": "How am I doing today?", "function_call": {"name": "get_step_goal_progress", "arguments": {}}},
             {"user_query": "Show me my stats", "function_call": {"name": "get_steps", "arguments": {}}},
             {"user_query": "Quick fitness check", "function_call": {"name": "get_steps", "arguments": {}}},
             {"user_query": "Health summary", "function_call": {"name": "get_steps", "arguments": {}}},
-            {"user_query": "Am I doing well today?", "function_call": {"name": "get_goal_progress", "arguments": {}}},
+            {"user_query": "Am I doing well today?", "function_call": {"name": "get_step_goal_progress", "arguments": {}}},
             {
                 "user_query": "How's my day going fitness wise?",
                 "function_call": {"name": "get_steps", "arguments": {}},
@@ -686,18 +686,18 @@ def generate_training_examples() -> list[dict[str, Any]]:
             {"user_query": "Did I move around enough?", "function_call": {"name": "get_steps", "arguments": {}}},
             {
                 "user_query": "Should I walk more today?",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
-            {"user_query": "Need more steps?", "function_call": {"name": "get_goal_progress", "arguments": {}}},
-            {"user_query": "Am I behind on my goal?", "function_call": {"name": "get_goal_progress", "arguments": {}}},
+            {"user_query": "Need more steps?", "function_call": {"name": "get_step_goal_progress", "arguments": {}}},
+            {"user_query": "Am I behind on my goal?", "function_call": {"name": "get_step_goal_progress", "arguments": {}}},
             {
                 "user_query": "How many more steps do I need?",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
-            {"user_query": "Steps remaining", "function_call": {"name": "get_goal_progress", "arguments": {}}},
+            {"user_query": "Steps remaining", "function_call": {"name": "get_step_goal_progress", "arguments": {}}},
             {
                 "user_query": "What's left to reach my goal?",
-                "function_call": {"name": "get_goal_progress", "arguments": {}},
+                "function_call": {"name": "get_step_goal_progress", "arguments": {}},
             },
         ]
     )

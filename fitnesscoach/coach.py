@@ -8,7 +8,7 @@ from .provider import (
     get_active_minutes,
     get_body_battery_level,
     get_daily_step_goal,
-    get_goal_progress,
+    get_step_goal_progress,
     get_heart_rate,
     get_sleeping_minutes,
     get_steps,
@@ -21,7 +21,7 @@ MODEL_ID = "google/functiongemma-270m-it"
 TOOLS = [
         get_steps,
         get_daily_step_goal,
-        get_goal_progress,
+        get_step_goal_progress,
         get_sleeping_minutes,
         get_active_minutes,
         get_heart_rate,

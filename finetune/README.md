@@ -25,7 +25,7 @@ The [tengomucho/fitness-coach-function-calling](https://huggingface.co/datasets/
 **Supported Functions:**
 - `get_steps()` - Get today's step count
 - `get_daily_step_goal()` - Get daily step goal
-- `get_goal_progress()` - Get progress toward step goal
+- `get_step_goal_progress()` - Get progress toward step goal
 - `get_sleeping_minutes()` - Get sleep duration
 - `get_active_minutes()` - Get active minutes
 - `get_heart_rate()` - Get current heart rate

@@ -229,7 +229,7 @@ def get_daily_step_goal() -> int:
     return summary.get("dailyStepGoal", 0)
 
 
-def get_goal_progress() -> float:
+def get_step_goal_progress() -> float:
     """Get the step goal progress for today in percentage.
 
     Args:

@@ -28,15 +28,15 @@ def test_get_daily_step_goal(mock_summary_data):
     with patch("fitnesscoach.provider.get_summary", return_value=mock_summary_data):
         assert provider.get_daily_step_goal() == 12000
 
-def test_get_goal_progress(mock_summary_data):
+def test_get_step_goal_progress(mock_summary_data):
     with patch("fitnesscoach.provider.get_summary", return_value=mock_summary_data):
         # (10000 / 12000) * 100 = 83.333...
-        assert provider.get_goal_progress() == pytest.approx(83.333, rel=1e-3)
+        assert provider.get_step_goal_progress() == pytest.approx(83.333, rel=1e-3)
 
-def test_get_goal_progress_zero_goal():
+def test_get_step_goal_progress_zero_goal():
     mock_data = {"totalSteps": 1000, "dailyStepGoal": 0}
     with patch("fitnesscoach.provider.get_summary", return_value=mock_data):
-        assert provider.get_goal_progress() == 0.0
+        assert provider.get_step_goal_progress() == 0.0
 
 def test_get_sleeping_minutes(mock_summary_data):
     with patch("fitnesscoach.provider.get_summary", return_value=mock_summary_data):
