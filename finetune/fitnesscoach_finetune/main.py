@@ -132,7 +132,6 @@ def train(model_id, dataset_id, output_dir, num_epochs, batch_size, learning_rat
     print(f"  Test set: {len(dataset['test'])} examples")
 
     # Identify transformer layer class for FSDP wrapping
-    # FunctionGemma is based on Gemma architecture
     transformer_layer_cls_to_wrap = model.model.layers[0].__class__.__name__
     print(f"Wrapping transformer layer: {transformer_layer_cls_to_wrap}")
 
@@ -148,7 +147,7 @@ def train(model_id, dataset_id, output_dir, num_epochs, batch_size, learning_rat
     }
 
     # Set up PEFT LoRA configuration
-    # Target modules for FunctionGemma (based on Gemma architecture)
+    # Target modules for FunctionGemma
     lora_config = LoraConfig(
         r=32,
         lora_alpha=64,
