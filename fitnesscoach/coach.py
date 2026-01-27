@@ -61,9 +61,9 @@ def extract_tool_calls(text: str) -> list[dict[str, Any]]:
 
 
 class FitnessCoachChat:
-    def __init__(self, verbose: bool = False):
-        self.processor = AutoProcessor.from_pretrained(MODEL_ID)
-        self.model = AutoModelForCausalLM.from_pretrained(MODEL_ID, device_map="auto")
+    def __init__(self, verbose: bool = False, model_id: str = MODEL_ID):
+        self.processor = AutoProcessor.from_pretrained(model_id)
+        self.model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto")
         self.tools = TOOLS
         self.tools_dict = {tool.__name__: tool for tool in self.tools}
         self.messages = [
@@ -172,14 +172,14 @@ def _chat_loop(coach: FitnessCoachChat):
         output = coach.ask(question)
         print(f"\nCoach: {output}")
 
-def chat(question: str | None = None, verbose: bool = False):
+def chat(question: str | None = None, verbose: bool = False, model_id: str = MODEL_ID):
     """
     Simple chat implementation that manually handles the full FunctionGemma flow.
     This demonstrates the complete cycle: question -> tool call -> tool result -> answer.
     """
-    print("🏃 Setting up fitness coach...")
+    print(f"🏃 Setting up fitness coach with model {model_id}...")
 
-    coach = FitnessCoachChat(verbose=verbose)
+    coach = FitnessCoachChat(verbose=verbose, model_id=model_id)
 
     if question:
         return _one_question_chat(coach, question)
