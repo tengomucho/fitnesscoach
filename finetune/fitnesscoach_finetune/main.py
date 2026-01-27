@@ -31,19 +31,6 @@ xr.use_spmd()
 app = typer.Typer(help="Fine-tune FunctionGemma for fitness coach function calling on TPU.")
 
 
-def parse_json_if_str(value):
-    """Parse JSON if the value is a JSON string, otherwise return as-is."""
-    if isinstance(value, str):
-        stripped = value.strip()
-        if (stripped.startswith("{") and stripped.endswith("}")) or (
-            stripped.startswith("[") and stripped.endswith("]")
-        ):
-            try:
-                return json.loads(stripped)
-            except json.JSONDecodeError:
-                return value
-    return value
-
 def format_for_functiongemma(example, tokenizer):
     """
     Format fitness coach dataset for FunctionGemma fine-tuning.
