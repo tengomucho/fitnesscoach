@@ -28,6 +28,20 @@ fitnesscoach summary
 
 This command fetches your latest health and fitness data and outputs a concise summary.
 
+To chat with the Fitness Coach assistant, run:
+
+```bash
+fitnesscoach chat
+```
+
+You can also ask a specific question directly:
+
+```bash
+fitnesscoach chat --question "What was my performance today?"
+```
+
+This command allows you to interact with the fitness coach AI, which can analyze your fitness data and provide personalized insights. Use the `--verbose` flag to see detailed function calls, and `--model-id` to specify a different model.
+
 You can get help and see all commands with:
 
 ```bash
