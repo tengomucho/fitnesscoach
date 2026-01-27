@@ -27,20 +27,21 @@ import shutil
 from typing import Any
 
 import typer
-from rich import print
 from datasets import Dataset
+from rich import print
 from transformers.utils import get_json_schema
 
 # Import the actual functions from fitnesscoach.provider
 from fitnesscoach.provider import (
-    get_steps,
-    get_daily_step_goal,
-    get_step_goal_progress,
-    get_sleeping_minutes,
     get_active_minutes,
-    get_heart_rate,
     get_body_battery_level,
+    get_daily_step_goal,
+    get_heart_rate,
+    get_sleeping_minutes,
+    get_step_goal_progress,
+    get_steps,
 )
+
 
 def generate_function_definitions() -> list[dict[str, Any]]:
     """Generate function definitions from actual provider functions using transformers.utils.get_json_schema."""
