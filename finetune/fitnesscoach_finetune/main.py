@@ -11,14 +11,15 @@ Based on: https://github.com/huggingface/accelerate/blob/main/examples/finetune_
 import json
 import os
 import shutil
+import time
 
 import torch
 import torch_xla
 import torch_xla.runtime as xr
 import typer
-from datasets import load_dataset
+from datasets import Dataset, load_dataset
 from peft import LoraConfig
-
+from tqdm import tqdm
 from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
 from transformers.modeling_utils import unwrap_model
 from trl import SFTConfig, SFTTrainer
@@ -75,7 +76,7 @@ def format_for_functiongemma(example, tokenizer):
         print(f"Tools: {tools}")
         raise
 
-def train(model_id, dataset_id, output_dir, num_epochs, batch_size, learning_rate, max_steps):
+def train(model_id, dataset_id, output_dir, num_epochs, batch_size, learning_rate, max_steps, max_length):
     """
     Fine-tune FunctionGemma on TPU with FSDPv2 and LoRA.
 
@@ -87,6 +88,7 @@ def train(model_id, dataset_id, output_dir, num_epochs, batch_size, learning_rat
         batch_size: Per-device batch size
         learning_rate: Learning rate for training
         max_steps: Maximum number of training steps
+        max_length: Maximum sequence length
     """
 
     print(f"Loading model: {model_id}")
@@ -119,11 +121,20 @@ def train(model_id, dataset_id, output_dir, num_epochs, batch_size, learning_rat
     print(f"Dataset loaded with {len(dataset)} examples")
     print(f"Dataset features: {dataset.features}")
 
+    # Format dataset. Being a small dataset, we can afford to format it with a simple loop.
+    print("Formatting dataset...")
+    start_time = time.time()
+    formatted_texts = []
+    for example in tqdm(dataset):
+        formatted_texts.append(format_for_functiongemma(example, tokenizer))
+    dataset = Dataset.from_dict({"text": formatted_texts})
+    print(f"Dataset formatted in {time.time() - start_time} seconds")
+
     # Show a sample formatted example
     print("\n" + "=" * 60)
     print("Sample formatted example:")
     print("=" * 60)
-    sample_text = format_for_functiongemma(dataset[0], tokenizer)
+    sample_text = dataset[0]
     print(sample_text)
     print("=" * 60 + "\n")
 
@@ -163,7 +174,7 @@ def train(model_id, dataset_id, output_dir, num_epochs, batch_size, learning_rat
     sft_config = SFTConfig(
         # Training hyperparameters
         gradient_checkpointing=False,  # Disabled when using xla_fsdp_grad_ckpt
-        max_length=512,
+        max_length=max_length,
         per_device_train_batch_size=batch_size,
         num_train_epochs=num_epochs,
         learning_rate=learning_rate,
@@ -182,6 +193,7 @@ def train(model_id, dataset_id, output_dir, num_epochs, batch_size, learning_rat
         # Dataset configuration
         dataset_text_field="text",
         packing=False,  # Disable packing for function calling
+        pad_to_multiple_of=max_length,
 
         # Miscellaneous
         dataloader_drop_last=True,
@@ -216,7 +228,6 @@ def train(model_id, dataset_id, output_dir, num_epochs, batch_size, learning_rat
         args=sft_config,
         peft_config=lora_config,
         processing_class=tokenizer,
-        formatting_func=lambda example: format_for_functiongemma(example, tokenizer),
     )
 
     print("🏃 Starting training...")
@@ -272,6 +283,15 @@ def check_setup(model_id: str):
         print(f"❌ Cannot access 🤗 Hugging Face model: [bold red]{model_id}[/bold red]")
         raise e
 
+def upload_model(output_dir: str):
+    """Upload the model adapter to the Hugging Face Hub."""
+    print(f"🤗 Uploading model adapter to the Hugging Face Hub: {output_dir}")
+    hub_model_id = "tengomucho/functiongemma-fitness-coach"
+    model = AutoModelForCausalLM.from_pretrained(output_dir)
+    tokenizer = AutoTokenizer.from_pretrained(output_dir)
+    model.push_to_hub(hub_model_id)
+    tokenizer.push_to_hub(hub_model_id)
+    print("🤗 Model adapter uploaded to the Hugging Face Hub")
 
 @app.command("train")
 def train_command(
@@ -310,8 +330,22 @@ def train_command(
         "--max-steps", "-s",
         help="Maximum number of training steps, -1 for no limit"
     ),
+    max_length: int = typer.Option(
+        512,
+        "--max-length", "-ml",
+        help="Maximum sequence length"
+    ),
+    upload: bool = typer.Option(
+        False,
+        "--upload", "-u",
+        help="Upload the model to the Hugging Face Hub"
+    ),
 ):
     """Fine-tune FunctionGemma for fitness coach function calling on TPU."""
+
+    if upload:
+        upload_model(output_dir)
+        return
 
     check_setup(model_id)
 
@@ -344,6 +378,7 @@ def train_command(
         batch_size=batch_size,
         learning_rate=learning_rate,
         max_steps=max_steps,
+        max_length=max_length,
     )
 
 

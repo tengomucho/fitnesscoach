@@ -19,3 +19,5 @@ wheels/
 .claude/
 CLAUDE.md
 
+# Finetuned model
+output/functiongemma-fitness-coach/
