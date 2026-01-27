@@ -34,7 +34,7 @@ def summary(force_refresh: bool = False):
 
 
 @app.command()
-def chat(question: str | None = None, verbose: bool = False, model_id: str = "google/functiongemma-270m-it"):
+def chat(question: str | None = None, verbose: bool = False, model_id: str = "tengomucho/functiongemma-fitness-coach"):
     """Chat with the Fitness Coach."""
     from .coach import chat
     chat(question, verbose=verbose, model_id=model_id)

@@ -8,14 +8,14 @@ from .provider import (
     get_active_minutes,
     get_body_battery_level,
     get_daily_step_goal,
-    get_step_goal_progress,
     get_heart_rate,
     get_sleeping_minutes,
+    get_step_goal_progress,
     get_steps,
 )
 
 
-MODEL_ID = "google/functiongemma-270m-it"
+MODEL_ID = "tengomucho/functiongemma-fitness-coach"
 
 
 TOOLS = [
@@ -56,7 +56,7 @@ def extract_tool_calls(text: str) -> list[dict[str, Any]]:
             k: cast((v1 or v2).strip())
             for k, v1, v2 in re.findall(r"(\w+):(?:<escape>(.*?)<escape>|([^,}]*))", args)
         }
-    } for name, args in re.findall(r"<start_function_call>call:(\w+)\{(.*?)\}<end_function_call>", text, re.DOTALL)]
+    } for name, args in re.findall(r"<start_function_call>call[: ](\w+)\{(.*?)\}<end_function_call>", text, re.DOTALL)]
 
 
 
@@ -66,12 +66,9 @@ class FitnessCoachChat:
         self.model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto")
         self.tools = TOOLS
         self.tools_dict = {tool.__name__: tool for tool in self.tools}
-        self.messages = [
-            {"role": "developer", "content": "You are a model that can do function calling with the following functions"},
-        ]
         self.verbose = verbose
 
-    def log(self, message: str):
+    def log(self, message: str | Any):
         if self.verbose:
             print(message)
 
@@ -79,16 +76,18 @@ class FitnessCoachChat:
         """
         Ask a question to the model.
         """
-        self.messages.append({"role": "user", "content": question})
-        return self._chat_step()
+        messages = [
+            {"role": "developer", "content": "You are a model that can do function calling with the following functions"},
+        ]
+        messages.append({"role": "user", "content": question})
+        return self._chat_step(messages)
 
-
-    def _format_inputs(self):
+    def _format_inputs(self, messages: list[dict[str, Any]]):
         """
         Get the inputs for the model.
         """
         inputs = self.processor.apply_chat_template(
-            self.messages,
+            messages,
             tools=self.tools,
             add_generation_prompt=True,
             return_dict=True,
@@ -96,12 +95,12 @@ class FitnessCoachChat:
         )
         return inputs
 
-    def _chat_step(self) -> str:
+    def _chat_step(self, messages: list[dict[str, Any]]) -> str:
         """
         Chat step implementation that manually handles the full FunctionGemma flow.
         This demonstrates the complete cycle: question -> tool call -> tool result -> answer.
         """
-        inputs = self._format_inputs()
+        inputs = self._format_inputs(messages)
 
         out = self.model.generate(
             **inputs.to(self.model.device),
@@ -116,26 +115,30 @@ class FitnessCoachChat:
         # Parse and execute tool calls
         tool_calls = extract_tool_calls(output)
         if not tool_calls:
+            self.log(messages)
             return output
 
         # Run the tool
+        tool_name = tool_calls[0]['name']
+        if tool_name not in self.tools_dict:
+            raise ValueError(f"Coach tried to call unexisting tool: {tool_name}")
         self.log(f"\n🔧 Executing tool: {tool_calls[0]['name']}")
         result = self.tools_dict[tool_calls[0]['name']](**tool_calls[0]['arguments'])
         self.log(f"📊 Tool result: {result}")
 
         # Generate final answer with tool result
-        self.messages.append({
+        messages.append({
             "role": "assistant",
             "tool_calls": [{"type": "function", "function": call} for call in tool_calls]
         })
         # FunctionGemma expects tool response format with 'name' and 'content'
-        self.messages.append({
+        messages.append({
             "role": "tool",
             "name": tool_calls[0]['name'],
             "content": str(result)
         })
 
-        inputs = self._format_inputs()
+        inputs = self._format_inputs(messages)
 
         out = self.model.generate(
             **inputs.to(self.model.device),
@@ -145,7 +148,8 @@ class FitnessCoachChat:
 
         generated_tokens = out[0][len(inputs["input_ids"][0]):]
         final_output = self.processor.decode(generated_tokens, skip_special_tokens=True)
-        self.messages.append({"role": "assistant", "content": final_output})
+        messages.append({"role": "assistant", "content": final_output})
+        self.log(messages)
         return final_output
 
 
@@ -167,10 +171,13 @@ def _chat_loop(coach: FitnessCoachChat):
 
     print("\nCoach: Hi! How can I help you today? You can ask me questions about your fitness data from today.")
     question = ""
-    while question != "exit" and question != "quit":
+    while True:
         question = typer.prompt("You")
+        if question.lower() == "exit" or question.lower() == "quit" or question.lower() == "bye":
+            print("Coach: 👋 Goodbye! See you next time!")
+            break
         output = coach.ask(question)
-        print(f"\nCoach: {output}")
+        print(f"Coach: {output}")
 
 def chat(question: str | None = None, verbose: bool = False, model_id: str = MODEL_ID):
     """
