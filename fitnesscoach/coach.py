@@ -121,7 +121,7 @@ class FitnessCoachChat:
         # Run the tool
         tool_name = tool_calls[0]['name']
         if tool_name not in self.tools_dict:
-            raise ValueError(f"Coach tried to call unexisting tool: {tool_name}")
+            raise ValueError(f"Coach tried to call nonexisting tool: {tool_name}")
         self.log(f"\n🔧 Executing tool: {tool_calls[0]['name']}")
         result = self.tools_dict[tool_calls[0]['name']](**tool_calls[0]['arguments'])
         self.log(f"📊 Tool result: {result}")
