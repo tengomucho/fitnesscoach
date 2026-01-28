@@ -1,17 +1,36 @@
-# Fine-Tuning FunctionGemma on TPU to Create a Virtual Fitness Coach
+# Fine-Tuning FunctionGemma on TPU to Create a Virtual Fitness Coach in 10 Minutes, $0.50
 
-## Intro
+While most FunctionGemma fine-tuning tutorials focus on GPU setups, Google Cloud TPUs offer a compelling alternative: **faster training, lower cost, and easier scaling**. But TPUs come with unique constraints—dynamic tensor shapes kill performance, and standard training configurations won't work out of the box.
 
-[FunctionGemma](https://huggingface.co/google/functiongemma-270m-it) is a rather small model that allows to integrate LLM/chat functionalities and function calling capabilities. It seemed the perfect tool to create a demo for a virtual fitness coach based on data that could be retrieved from my fitness tracker.
+This post demonstrates fine-tuning [FunctionGemma](https://huggingface.co/google/functiongemma-270m-it) (270M parameters) on **TPU v5litepod-8** for a function-calling fitness coach application, achieving **~10 minute training time for ~$0.50**. I'll share the TPU-specific optimizations that made this possible and show how the fine-tuned model significantly reduces hallucinations compared to the base model.
 
-To do that I followed these simple steps:
+## What You'll Learn
 
-1. I developed a python library capable of retrieving some fitness data, and document the API in a simple way.
-2. I created a synthetic dataset based on the questions that could be asked to the coach together with the expected tool calls, and formatted them with the expected answers.
-3. Fine-tuned the model based on the dataset I just created.
-4. Create a simple chat demo to test the fine-tuned model.
+**Key Technical Contributions**:
+- **TPU optimization strategies**: Why `pad_to_multiple_of=max_length` reduced training time from ~1 hour to ~10 minutes (6x speedup)
+- **FSDP v2 configuration**: Using `xla_fsdp_v2` and `xla_fsdp_grad_ckpt` for efficient multi-device training on TPU
+- **Synthetic dataset generation**: Creating 213 function-calling examples formatted for FunctionGemma
+- **Quantitative evaluation**: Comparing base model vs. fine-tuned performance on hallucination rates
 
-Here's how I did it.
+**Why TPU for Small Model Fine-Tuning?**:
+- **Cost-effective**: ~$0.50 total training cost (vs. $5-10 on GPU cloud instances)
+- **Fast iteration**: 10-minute training enables rapid experimentation
+
+**Project Resources**:
+- Complete code: [github.com/tengomucho/fitnesscoach](https://github.com/tengomucho/fitnesscoach)
+- Fine-tuned model: [tengomucho/functiongemma-fitness-coach](https://huggingface.co/tengomucho/functiongemma-fitness-coach)
+- Training dataset: [tengomucho/fitness-coach-function-calling](https://huggingface.co/datasets/tengomucho/fitness-coach-function-calling)
+
+## Project Overview
+
+The goal was to create a virtual fitness coach that can answer questions about fitness data retrieved from a fitness device, in my case my Garmin watch. The project follows these steps:
+
+1. **Define the API**: Python functions to retrieve fitness data (steps, sleep, heart rate, etc.)
+2. **Generate synthetic dataset**: 213 training examples mapping user queries to function calls
+3. **Fine-tune on TPU**: Optimize FunctionGemma with TPU-specific configurations
+4. **Build the chat interface**: Interactive CLI that runs inference and executes tool calls
+
+Let's dive into the details.
 
 ## Defining the Provider API and Testing
 
