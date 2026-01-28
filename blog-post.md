@@ -135,11 +135,52 @@ With these, it was possible to create the simple [fitness coach function calling
 
 While inference on FunctionGemma can be done on a common PC, fine-tuning requires significant compute and memory. This is where Google's TPUs shine—but they require specific optimizations to achieve peak performance.
 
-Without proper configuration, TPU training can actually be **slower than GPU** due to repeated graph compilation. This section covers the three critical optimizations that reduced training time from ~1 hour to ~10 minutes.
+Without proper configuration, TPU training can actually be very slow due to repeated graph compilation. This section covers TPU setup and the three critical optimizations that reduced training time from ~1 hour to ~10 minutes.
+
+### Setting Up Your TPU Environment
+
+**Option 1: Google Cloud TPU** (recommended for production training)
+
+Provision a TPU v5litepod-8:
+```bash
+gcloud compute tpus tpu-vm create my-tpu \
+  --zone=us-west4-a \
+  --accelerator-type=v5litepod-8 \
+  --version v2-alpha-tpuv5-lite
+```
+
+You can now connect through SSH:
+```bash
+gcloud compute tpus tpu-vm ssh my-tpu --zone=us-west4-a
+```
+
+To install the dependencies in a simple way, I suggest that you to clone the project and use `uv` to install the dependencies from the `finetune` sub-project.
+
+```bash
+# Install Astral's uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+git clone https://github.com/tengomucho/fitnesscoach
+cd fitnesscoach
+uv venv
+source .venv/bin/activate
+uv pip install ./finetune
+```
+
+**Note**: If you're adapting this for your own project, you'll need: `torch~=2.9.0`, `torch_xla[tpu]~=2.9.0`, `transformers`, `datasets`, `peft`, and `accelerate`.
+
+
+If you want to repeat the same fine-tuning I run, you can now launch the fine-tuning by using the CLI `fitnesscoach_finetune`. To better understand how the fine-tuning script was written, read the next section.
+
+**Common TPU Issues**:
+
+- **Slow training with "Compiling..." messages?** Ensure `pad_to_multiple_of=max_length` in your configuration (see TPU Optimization #3 below).
+- **Out of memory error?** Reduce `per_device_train_batch_size` in the training configuration.
+- **Slow training over the first steps?** This is normal, as Torch XLA will trace the graphs and this takes a while, but once done the training loop will be much faster.
+
 
 ### TPU Optimization #1: SPMD Initialization
 
-First, enable Single Program Multiple Data (SPMD) mode **before** loading the model. This is required for FSDPv2 on TPU:
+First, enable Single Program Multiple Data (SPMD) mode before loading the model. This is required for FSDPv2 on TPU:
 
 ```python
 import torch_xla.runtime as xr
