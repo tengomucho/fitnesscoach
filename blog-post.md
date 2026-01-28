@@ -55,7 +55,7 @@ Sleeping time: 7h:13m
 
 ## Creating a Dataset for Fine Tuning
 
-When using the FunctionGemma model, the suggested way of preparing the messages in the format expected by the model:
+When using the FunctionGemma model, the suggested way of preparing the messages in the format expected by the model is to use the following structure:
 
 ```python
 message = [
@@ -100,7 +100,7 @@ The inputs can be then used with the `model.generate` call, that will provide a 
 
 For a complete example on how to do this, you can check the FunctionGemma [model card](https://huggingface.co/google/functiongemma-270m-it).
 What I wanted to do is to create a synthetic dataset that matches the calls.
-I ended up writing a script that created a rather small dataset, with examples of possible conversations with the fitness coach and the tool call that should be called. E.g.:
+I ended up writing a script that created a dataset with 213 examples of possible conversations with the fitness coach and the tool call that should be called. E.g.:
 
 ```json
 {"user_query": "My walking steps", "function_call": {"name": "get_steps", "arguments": {}}},
@@ -229,7 +229,7 @@ trainer = SFTTrainer(
 trainer.train()
 ```
 
-On a TPU v5litepod-8 the training takes around 10 minutes. As of 2026, the price for this setup is $2.40/hour with the on-demand. The total cost for the training should be around $0.50.
+On a TPU v5litepod-8 the training takes around 10 minutes. As of January 2026, the price for this setup is $2.40/hour with the on-demand pricing. The total cost for the training should be around $0.50.
 Once the model adapter has been trained, it can be uploaded to the Hugging Face hub. My version is available as [tengomucho/functiongemma-fitness-coach](https://huggingface.co/tengomucho/functiongemma-fitness-coach).
 
 ## Fitness Coach Chat
@@ -313,7 +313,7 @@ Once we call the final `model.generate` with this context, we obtain the final a
 
 While the default model chosen for the chat demo is the fine-tuned `tengomucho/functiongemma-fitness-coach`, I added the possibility to choose another model, so I could compare the results with the base model, `google/functiongemma-270m-it`.
 
-Even with the short fine-tuning based on the small dataset created, I could see some improvements over the base model. One of these is when asking questions in natural language that could lead the base model to an hallucinated tool calls. For example, when the base model was asked to report the sleep metrics, it incorrectly tried to call a function that does not exists:
+Even with the short fine-tuning based on the small dataset created, I could see some improvements over the base model. One of these is when asking questions in natural language that could lead the base model to hallucinated tool calls (when the model invents non-existent functions). For example, when the base model was asked to report the sleep metrics, it incorrectly tried to call a function that does not exist:
 
 ```
 You: Please display my sleep metrics
@@ -321,7 +321,7 @@ ValueError: Coach tried to call nonexisting tool: get_sleep_metrics
 ```
 
 When using the same prompt on the fine-tuned model, it calls the expected tool, i.e.: `get_sleeping_minutes` and answers correctly.
-Give this, I can conclude that fine-tuning FunctionGemma leads to more relevant and precise tool calls.
+Given this, I can conclude that fine-tuning FunctionGemma leads to more relevant and precise tool calls.
 
 ## Conclusion: What I Learned when Creating a Virtual Fitness Coach
 
