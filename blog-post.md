@@ -139,8 +139,6 @@ Without proper configuration, TPU training can actually be very slow due to repe
 
 ### Setting Up Your TPU Environment
 
-**Option 1: Google Cloud TPU** (recommended for production training)
-
 Provision a TPU v5litepod-8:
 ```bash
 gcloud compute tpus tpu-vm create my-tpu \
