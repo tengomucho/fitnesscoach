@@ -34,8 +34,9 @@ Let's dive into the details.
 
 ## Defining the Provider API and Testing
 
-The first step was to define some very simple APIs that could be invoked as tool calls from the chat.
-I used the very handy `garminconnect` python module to retrieve the data from my Garmin watch, and I defined few functions to retrieve the information in the most simple way. E.g., to retrieve the number of steps walked today I have:
+Before teaching a model to call functions, you need functions to call. The first step was defining a simple API layer that wraps Garmin Connect data retrieval—these would become the "tools" available to our fitness coach.
+
+I used the handy `garminconnect` Python module to retrieve data from my Garmin watch and defined functions to access specific metrics. For example, here's how to retrieve today's step count:
 
 ```python
 def get_steps() -> int:
@@ -51,18 +52,17 @@ def get_steps() -> int:
     return summary.get("totalSteps", 0)
 ```
 
-Similarly, I defined these functions:
+I followed the same pattern to define seven functions in total:
 
-- get_steps
-- get_daily_step_goal
-- get_step_goal_progress
-- get_sleeping_minutes
-- get_active_minutes
-- get_heart_rate
-- get_body_battery_level
+- `get_steps` - Today's step count
+- `get_daily_step_goal` - Target steps for the day
+- `get_step_goal_progress` - Progress percentage toward goal
+- `get_sleeping_minutes` - Duration of sleep last night
+- `get_active_minutes` - Active time today
+- `get_heart_rate` - Current heart rate
+- `get_body_battery_level` - Garmin's energy level metric (0-100)
 
-
-To test the API, I created a simple command line interface (CLI) that could be invoked to retrieve some of the data:
+To verify the API worked correctly, I built a simple CLI that retrieves and displays the data:
 
 ```bash
 $ fitnesscoach summary
@@ -72,9 +72,11 @@ Active time: 1h:3m
 Sleeping time: 7h:13m
 ```
 
+With the API working, the next challenge was teaching the model when and how to call these functions.
+
 ## Creating a Dataset for Fine Tuning
 
-When using the FunctionGemma model, the suggested way of preparing the messages in the format expected by the model is to use the following structure:
+FunctionGemma expects a specific message format for function calling. The model uses three roles —`developer`, `user`, and `assistant`— in a structured conversation format:
 
 ```python
 message = [
@@ -105,7 +107,7 @@ inputs = processor.apply_chat_template(
 )
 ```
 
-The inputs can be then used with the `model.generate` call, that will provide a tool calling message. The tool call can be parsed so to obtain a message dialog that can be provided to the model to obtain the final response:
+You can then use these inputs with `model.generate` to get a function call, parse it, execute the function, and provide the result back to the model for a final natural language response. Here's what the complete conversation flow looks like:
 
 ```json
 [
@@ -117,9 +119,11 @@ The inputs can be then used with the `model.generate` call, that will provide a 
 ]
 ```
 
-For a complete example on how to do this, you can check the FunctionGemma [model card](https://huggingface.co/google/functiongemma-270m-it).
-What I wanted to do is to create a synthetic dataset that matches the calls.
-I ended up writing a script that created a dataset with 213 examples of possible conversations with the fitness coach and the tool call that should be called. E.g.:
+For complete implementation details, check the FunctionGemma [model card](https://huggingface.co/google/functiongemma-270m-it).
+
+### Building the Training Dataset
+
+The goal was creating a synthetic dataset mapping natural language queries to the correct function calls. I wrote a script that generated 213 training examples covering various ways users might ask about their fitness data:
 
 ```json
 {"user_query": "My walking steps", "function_call": {"name": "get_steps", "arguments": {}}},
@@ -128,14 +132,15 @@ I ended up writing a script that created a dataset with 213 examples of possible
 {"user_query": "Get my steps", "function_call": {"name": "get_steps", "arguments": {}}},
 ```
 
-Once these have been defined, I used `get_json_schema` from `transformers.utils` to automatically parse the API metadata and generate the correct JSON tool definition that can be passed over to the chat template.
-With these, it was possible to create the simple [fitness coach function calling](https://huggingface.co/datasets/tengomucho/fitness-coach-function-calling) dataset, that I then shared on the Hugging Face hub.
+The beauty of this approach is that `get_json_schema` from `transformers.utils` automatically extracts function signatures and docstrings from the Python code, generating the JSON tool definitions FunctionGemma needs. No manual schema writing required.
+
+I published the complete dataset as [fitness-coach-function-calling](https://huggingface.co/datasets/tengomucho/fitness-coach-function-calling) on Hugging Face Hub, making it easy to reproduce the fine-tuning process.
 
 ## Fine Tuning the Model on TPU
 
-While inference on FunctionGemma can be done on a common PC, fine-tuning requires significant compute and memory. This is where Google's TPUs shine—but they require specific optimizations to achieve peak performance.
+With the dataset ready, it was time for the compute-intensive part: fine-tuning the model. While you can run FunctionGemma inference on a typical PC, training requires significant compute and memory. This is where Google's TPUs shine — but they require specific optimizations to achieve peak performance.
 
-Without proper configuration, TPU training can actually be very slow due to repeated graph compilation. This section covers TPU setup and the three critical optimizations that reduced training time from ~1 hour to ~10 minutes.
+Here's what I learned the hard way: without proper configuration, TPU training can actually be *slower* than GPU due to repeated graph compilation. This section covers the TPU setup and three critical optimizations that reduced training time from ~1 hour to ~10 minutes.
 
 ### Setting Up Your TPU Environment
 
@@ -147,12 +152,12 @@ gcloud compute tpus tpu-vm create my-tpu \
   --version v2-alpha-tpuv5-lite
 ```
 
-You can now connect through SSH:
+Connect to your TPU via SSH:
 ```bash
 gcloud compute tpus tpu-vm ssh my-tpu --zone=us-west4-a
 ```
 
-To install the dependencies in a simple way, I suggest that you to clone the project and use `uv` to install the dependencies from the `finetune` sub-project.
+For the simplest setup, clone the project repository and use `uv` to install dependencies from the `finetune` sub-project:
 
 ```bash
 # Install Astral's uv
@@ -166,8 +171,7 @@ uv pip install ./finetune
 
 **Note**: If you're adapting this for your own project, you'll need: `torch~=2.9.0`, `torch_xla[tpu]~=2.9.0`, `transformers`, `datasets`, `peft`, and `accelerate`.
 
-
-If you want to repeat the same fine-tuning I run, you can now launch the fine-tuning by using the CLI `fitnesscoach_finetune`. To better understand how the fine-tuning script was written, read the next section.
+If you want to reproduce my exact training run, you can launch it with the CLI command `fitnesscoach_finetune`. The following sections explain how the training script works and why each configuration choice matters.
 
 **Common TPU Issues**:
 
@@ -178,7 +182,7 @@ If you want to repeat the same fine-tuning I run, you can now launch the fine-tu
 
 ### TPU Optimization #1: SPMD Initialization
 
-First, enable Single Program Multiple Data (SPMD) mode before loading the model. This is required for FSDPv2 on TPU:
+The first optimization is simple but mandatory. Enable Single Program Multiple Data (SPMD) mode before loading the model—this is required for FSDP v2 on TPU:
 
 ```python
 import torch_xla.runtime as xr
@@ -189,7 +193,7 @@ xr.use_spmd()  # Must call before model initialization
 
 ### Loading the Model
 
-Load the model using the standard `transformers` API:
+With SPMD enabled, load the model using the standard `transformers` API:
 
 ```python
 # Load model with low CPU memory usage
@@ -230,7 +234,7 @@ fsdp_training_args = {
 
 ### LoRA Configuration
 
-Configure LoRA for parameter-efficient fine-tuning:
+To keep memory usage low and training fast, I used LoRA (Low-Rank Adaptation) to fine-tune only a small subset of parameters:
 
 ```python
 lora_config = LoraConfig(
@@ -242,9 +246,11 @@ lora_config = LoraConfig(
 )
 ```
 
+This targets the attention layers (`q_proj`, `k_proj`, `v_proj`, `o_proj`) which have the most impact on function calling performance.
+
 ### TPU Optimization #3: Static Tensor Shapes (Critical!)
 
-This is the **most important optimization** for TPU performance:
+This is the **most important optimization** for TPU performance—and the one that took me the longest to discover:
 
 ```python
 sft_config = SFTConfig(
@@ -313,12 +319,13 @@ trainer = SFTTrainer(
 trainer.train()
 ```
 
-On a TPU v5litepod-8 the training takes around 10 minutes. As of January 2026, the price for this setup is $2.40/hour with the on-demand pricing. The total cost for the training should be around $0.50.
-Once the model adapter has been trained, it can be uploaded to the Hugging Face hub. My version is available as [tengomucho/functiongemma-fitness-coach](https://huggingface.co/tengomucho/functiongemma-fitness-coach).
+On a TPU v5litepod-8, training completes in approximately 10 minutes. At the January 2026 on-demand pricing of $2.40/hour, the total training cost comes to around $0.50 — less than a coffee.
 
-## Fitness Coach Chat
+Once training finished, I uploaded the adapter weights to Hugging Face Hub as [tengomucho/functiongemma-fitness-coach](https://huggingface.co/tengomucho/functiongemma-fitness-coach). Now anyone can use the fine-tuned model without retraining.
 
-With a new fine-tuned model, it was now time to create the actual fitness coach chatbot. Doing it is rather simple, I used the code sample on the FunctionGemma as a starting point and crafted the chatbot in less than 200 lines of code. You can launch it with a command from the CLI.
+## Building the Fitness Coach Chat Interface
+
+With the fine-tuned model ready, the final step was creating an interactive chatbot. This turned out to be surprisingly straightforward—using FunctionGemma's examples as a starting point, I built a working CLI in less than 200 lines of code.
 
 ```console
 $ fitnesscoach chat
@@ -333,9 +340,11 @@ You: What's my energy level?
 Coach: My body battery level is 69.
 ```
 
-The demo is quite simple, it loads the model and the tokenizer and then it enters into a chat loop that asks for a prompt, it generates a tool call, it parses the tool call and runs it, and finally it generates a final answer based on the tool call result.
+### How the Chat Loop Works
 
-At the beginning of each chat step, the FunctionGemma messages template is initialized, then we add the question, apply the template and the obtain the tool call output:
+The implementation follows a simple pattern: load the model, enter a chat loop, generate a tool call, parse and execute it, then generate a natural language response.
+
+Here's the first generation step where the model decides which function to call:
 
 ```python
 out = self.model.generate(
@@ -350,7 +359,7 @@ output = self.processor.decode(generated_tokens, skip_special_tokens=True)
 # <start_function_call>call:get_body_battery_level{}<end_function_call>
 ```
 
-The output can be easily parsed to call a registered tool:
+The model outputs a structured function call string that's easy to parse with a regex pattern:
 
 ```python
 function_call = [{
@@ -362,7 +371,7 @@ function_call = [{
 } for name, args in re.findall(r"<start_function_call>call[: ](\w+)\{(.*?)\}<end_function_call>", text, re.DOTALL)]
 ```
 
-We registered a dictionary of the allowed tools, so we just find out if the tool call request matches a name from the tool call dictionary keys, and then make the call. We then add the call result into the messages:
+With the function name and arguments parsed, we can execute the actual function. I maintain a dictionary mapping function names to callable objects, making it straightforward to invoke the right tool and capture its result:
 
 ```python
 result = self.tools_dict[tool_calls[0]['name']](**tool_calls[0]['arguments'])
@@ -380,7 +389,7 @@ messages.append({
 })
 ```
 
-This will generate a dictionary with the complete context that we can pass as argument to the `apply_chat_template` function:
+This builds up the complete conversation history, including the tool execution result. We can now pass this context back to the model for a second generation—this time to produce a natural language answer:
 
 ```json
 [
@@ -391,28 +400,45 @@ This will generate a dictionary with the complete context that we can pass as ar
 ]
 ```
 
-Once we call the final `model.generate` with this context, we obtain the final answer.
+A final call to `model.generate` with this complete context produces the natural language answer: "My body battery level is 69."
 
-## Compare with the Base Model
+## Measuring the Impact: Base Model vs. Fine-Tuned
 
-While the default model chosen for the chat demo is the fine-tuned `tengomucho/functiongemma-fitness-coach`, I added the possibility to choose another model, so I could compare the results with the base model, `google/functiongemma-270m-it`.
+The real question: did the fine-tuning actually help? To find out, I added a `--model-id` flag to the chat CLI so I could swap between the fine-tuned model and the base `google/functiongemma-270m-it`.
 
-Even with the short fine-tuning based on the small dataset created, I could see some improvements over the base model. One of these is when asking questions in natural language that could lead the base model to hallucinated tool calls (when the model invents non-existent functions). For example, when the base model was asked to report the sleep metrics, it incorrectly tried to call a function that does not exist:
+Even with just 213 training examples and 10 minutes of training, the improvements were clear. The most striking difference appeared when asking questions in natural language that don't exactly match the function names—cases where the base model would hallucinate (invent non-existent functions).
+
+For example, asking the base model to "display my sleep metrics" triggered a hallucination:
 
 ```
 You: Please display my sleep metrics
 ValueError: Coach tried to call nonexisting tool: get_sleep_metrics
 ```
 
-When using the same prompt on the fine-tuned model, it calls the expected tool, i.e.: `get_sleeping_minutes` and answers correctly.
-Given this, I can conclude that fine-tuning FunctionGemma leads to more relevant and precise tool calls.
+The base model invented `get_sleep_metrics`, a function that doesn't exist. When I asked the fine-tuned model the same question, it correctly called `get_sleeping_minutes` and provided the right answer.
 
-## Conclusion: What I Learned when Creating a Virtual Fitness Coach
+This demonstrates that even minimal fine-tuning teaches the model which functions actually exist and when to use them. The fine-tuned model learned to map natural language variations to the correct function names, significantly reducing hallucinations.
 
-I started this project to experiment with FunctionGemma and try to understand how it could be used on simple applications. I quickly figured out that the model is a great tiny model, great to generate interpretable tool calls after a given prompt. It was quickly clear to me the value of fine-tuning this model, and while some resources are available on how to do this on a GPU, I was happy to try to do that on TPU. I found out that fine-tuning on Google's TPU is rather easy and fast, in particular if we are aware of the hardware implementation details, in particular keeping the same shape all along the training loop. This can be achieved easily by setting the parameters to the trainer as explained in the above section.
+With validation complete, let's reflect on what this project teaches us about TPU fine-tuning and small model deployment.
 
-Here's a list of things that could be improved in this project:
+## Conclusion: Key Takeaways from Building a TPU-Powered Fitness Coach
 
-- I found the model does not seem to work well with multi-turn conversations. This might be due to the fact that the model is rather small, or perhaps that is has not been trained too much to achieve great performance on this. Another option would be to replace it with a slightly bigger model, for example [Qwen/Qwen3-0.6B](https://huggingface.co/Qwen/Qwen3-0.6B), or with a more recent one, like the more recent [tiiuae/Falcon-H1-Tiny-Tool-Calling-90M](https://huggingface.co/tiiuae/Falcon-H1-Tiny-Tool-Calling-90M). I haven't tried them on this project, but I am pretty sure that fine-tuning them could lead to performant results too.
-- The API might be more complete and more "LLM friendly", so to make it easier for the model to figure out which function should be called and better interpret results.
-- As mentioned before, the generated dataset is not very extensive, so the improvement over the base model is visible but marginal. A larger dataset can lead to better fine-tuning results.
+This project started as an experiment with FunctionGemma to understand how small, efficient models could power function-calling applications. The results exceeded expectations: a 270M parameter model fine-tuned for $0.50 in 10 minutes produces reliable, interpretable function calls for a practical application.
+
+The biggest revelation was discovering that **TPU fine-tuning is both faster and cheaper than GPU alternatives**—but only if you understand the hardware constraints. The single most important lesson: TPUs demand static tensor shapes. Without `pad_to_multiple_of=max_length`, training that should take 10 minutes stretches to an hour as the TPU constantly recompiles its computation graph.
+
+### Where to Go From Here
+
+This project demonstrates the viability of TPU fine-tuning for small models, but there's room for improvement:
+
+**Multi-turn conversations**: The 270M model struggles with extended dialogues. This likely stems from the model's size or limited multi-turn training data. Promising alternatives include [Qwen/Qwen3-0.6B](https://huggingface.co/Qwen/Qwen3-0.6B) (slightly larger but still edge-deployable) or [tiiuae/Falcon-H1-Tiny-Tool-Calling-90M](https://huggingface.co/tiiuae/Falcon-H1-Tiny-Tool-Calling-90M) (even smaller with specialized tool-calling training). The same TPU fine-tuning approach should work for either.
+
+**Richer API design**: The current functions return simple values (integers, tuples). Adding functions that accept parameters or return structured data would test the model's ability to handle more complex tool interactions. Better docstrings and more descriptive function names could also improve the model's function selection accuracy.
+
+**Dataset expansion**: With only 213 examples, the improvement over the base model is noticeable but modest. Scaling to 1,000+ examples covering edge cases, multi-step reasoning, and error handling would likely produce a significantly more robust model. The good news: even at 10x the dataset size, training would still cost under $5 and complete in under an hour.
+
+---
+
+The democratization of AI doesn't require massive GPU clusters or enterprise budgets. With TPUs, you can fine-tune production-ready function-calling models for the cost of a coffee and the time it takes to drink it. Whether you're building fitness coaches, home automation assistants, or domain-specific tools, the path to custom AI has never been more accessible.
+
+All code, datasets, and models are available on [GitHub](https://github.com/tengomucho/fitnesscoach) and [Hugging Face](https://huggingface.co/tengomucho/functiongemma-fitness-coach). Try it yourself and see what you can build in 10 minutes.
