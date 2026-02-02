@@ -13,7 +13,7 @@ This post demonstrates fine-tuning [FunctionGemma](https://huggingface.co/google
 - **Quantitative evaluation**: Comparing base model vs. fine-tuned performance on hallucination rates
 
 **Why TPU for Small Model Fine-Tuning?**:
-- **Cost-effective**: ~$0.50 total training cost (vs. $5-10 on GPU cloud instances)
+- **Cost-effective**: ~$0.50 total training cost
 - **Fast iteration**: 10-minute training enables rapid experimentation
 
 **Project Resources**:
