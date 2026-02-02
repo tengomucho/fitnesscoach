@@ -109,7 +109,7 @@ inputs = processor.apply_chat_template(
 
 You can then use these inputs with `model.generate` to get a function call, parse it, execute the function, and provide the result back to the model for a final natural language response. Here's what the complete conversation flow looks like:
 
-```json
+```python
 [
     {'role': 'developer', 'content': 'You are a model that can do function calling with the following functions'},
     {'role': 'user', 'content': 'tell me the steps walked'},
